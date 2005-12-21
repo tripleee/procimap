@@ -1,0 +1,20 @@
+# Standard procmail wrapper for processing .procimaprc
+# - usually to be installed in something like /usr/share/lib/procimap.rc
+#
+# era Wed Dec 21 07:37:03 2005
+# $Id: procimap.rc,v 1.1 2005-12-21 16:53:05 era Exp $
+
+SHELL=/bin/sh
+DEFAULT='|'
+
+
+:0
+* ! PROCIMAPRC ?? .
+{ PROCIMAPRC=$HOME/.procimaprc }
+
+INCLUDERC=$PROCIMAPRC
+
+
+:0f
+* ! ^^X-ProcIMAP:[ 	]*\/.*
+| echo X-ProcIMAP: default; cat
