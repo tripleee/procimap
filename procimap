@@ -1,0 +1,269 @@
+#! /usr/bin/perl
+#
+# procimap - era Thu Dec 16 09:45:54 2005
+# Process IMAP folder using Procmail
+#
+# Based on http://imapassassin.sourceforge.net/ -- forked && hacked extensively
+
+use strict;
+use warnings;
+
+use POSIX ":sys_wait_h";
+
+umask 077;
+
+my $ConfDir    = "$ENV{HOME}/.procimap";
+my $ConfFile   = "$ConfDir/procimap.conf";
+
+{
+  ######## FIXME: this is awfully U*x-centric; "use filetest" instead?
+
+  ######## FIXME: make this an installation-time preference, or something
+  my $group_is_ok = 1;		# Set to 0 to disallow group access
+  my ($readablemask, $writablemask) =
+      map { $_ & $group_is_ok ? 077 : 007 } (044, 022);
+
+  my @stat = stat ($ConfFile) || die "$0: Could not stat $ConfFile: $!\n";
+
+  die "$0: configuration file $ConfFile group/world readable\n"
+      if ($stat[2] & $readablemask);
+  die "$0: configuration file $ConfFile group/world writable\n"
+      if ($stat[2] & $writablemask);
+}
+
+# Read in configuration file
+
+my %Conf = ();
+open CONF,$ConfFile
+    || die "$0: Could not open $ConfFile: $!\n";
+while (my $line = <CONF>)
+{
+  next if ($line =~ /^\s*(?:$|\#)/);
+  unless ($line =~ m/^(\S+)\s+(\S,*)/)
+  {
+    die "$0: $ConfFile:$.: Invalid directive $_";
+  }
+  my ($key,$value) = (lc($1), $2);
+  $Conf{$key} = $value;
+}
+close CONF;
+
+$Conf{statedir} |= $ConfDir;
+$Conf{pidfile} |= "$Conf{statedir}/procimap.pid";
+$Conf{midfile} |= "$Conf{statedir}/procimap.mid";
+
+######## FIXME: debugging location; update for production
+$Conf{procmailrc} |= "$ENV{HOME}/.procimap/procimap.rc";
+
+$Conf{delay} |= 60;
+$Conf{maxdelay} |= 600;
+
+die "$0: No server defined\n" unless $Conf{server};
+die "$0: No user name defined\n" unless $Conf{user};
+die "$0: No password defined\n" unless $Conf{password};
+
+#open the log file
+
+open (LOG, defined $Conf{logfile} ? ">>$Conf{logfile}" : ">&STDERR")
+    || die "$0: Could not open $Conf{logfile} for writing: $!\n";
+autoflush LOG 1;
+&log("startup");
+
+
+unless (defined $Conf{expunge}) {
+  &log("expunge preference not explicitly set; defaulting to 0");
+  $Conf{expunge} = 0;
+}
+
+if ($Conf{expunge} =~ /^(?:no?|off|x|false)$/i) {
+  &log("Configuration file 'expunge' directive interpreted as 0 (false)");
+  $Conf{expunge} = 0;
+} elsif ($Conf{expunge} =~ /^(?:[^01]|[01].)/) {
+  &log("Configuration file 'expunge' directive interpreted as " .
+       $Conf{expunge} ? "1 (true)" : "0 (false)");
+}
+
+
+# Catch signals
+
+$SIG{TERM} = $SIG{INT} = \&catch_zap;
+
+# See if PID mentioned in PID file (if any) is still around
+
+if (-e $Conf{pidfile}) {
+  open  PIDFILE,"$Conf{pidfile}"
+      || die "$0: Could not open $Conf{pidfile}: $!\n";
+  my $OldPID = <PIDFILE>;
+  chomp $OldPID;
+  close PIDFILE;
+
+  my $Group = getpgrp $OldPID;
+  if ($Group > 0) {
+    exit;
+  }
+}
+
+my $PrevMID = 0;
+if (-e $Conf{midfile}) {
+  open  MIDFILE,"$Conf{midfile}"
+      || die "$0: Could not open $Conf{midfile}: $!\n";
+  $PrevMID = <MIDFILE>;
+  chomp $PrevMID;
+  close MIDFILE;
+}
+my $LastMID = $PrevMID;
+
+# Write new PID file
+
+open  PIDFILE,">$Conf{pidfile}"
+    || die "$0: Could not open $Conf{pidfile} for writing: $!\n";
+print PIDFILE $$,"\n";
+close PIDFILE;
+
+
+#use Mail::IMAPClient 2.0; # Version >= 2.0 required for $@
+use Mail::IMAPClient;	   # ... but 2.1.4 has non-numeric version )-:
+
+# Set up connection to IMAP
+
+#print "Inbox='$INBOX' SpamFolder='$SpamFolder' server='$Server' user='$User' password='$Password' delay='$Delay'";
+
+my $IMAP = Mail::IMAPClient -> new (Server   => $Conf{server},
+                                    User     => $Conf{user},
+                                    Password => $Conf{password})
+    or die "$0: Connection to $Conf{user}\@$Conf{server} failed: $@\n";
+$IMAP -> select($Conf{inbox});
+$IMAP->Peek(1);
+
+my %Filtered = (); # Hash of already checked sequence #'s
+
+while (1) {
+  ######## TODO: optimize away some of the sorting?
+  my @MIDs   = sort numerically $IMAP -> unseen();    # Unread message ID's
+  my $MID;
+  my $Expunge = 0;			# Whether to do an expunge when done
+  foreach $MID (@MIDs) {
+    if (!$Filtered{$MID} && $MID > $PrevMID) {
+      $Filtered{$MID} = 1;
+      $LastMID = $MID;
+
+      # Get message from IMAP and feed to procmail. Retrieve result.
+
+      my $Message = $IMAP -> message_string($MID);
+      my ($ResultAction, $NewMessage) = procmail($Message);
+      &log(" MID: $MID result: $ResultAction");
+      if ($ResultAction =~ /^move (.*)/) {
+
+	# Make copy in new folder; delete original
+	######## TODO: maybe add flags and timestamp of original message
+        my $AppendStatus = $IMAP->append_string($Conf{spamfolder},$NewMessage);
+        if ($AppendStatus) {
+          $IMAP->set_flag("Seen", $MID);
+          $IMAP -> delete_message($MID);
+	  $Expunge = 1 if $Conf{expunge};
+        } else {
+          &log("Error moving spam message!");
+        }
+      }
+      &cleanupchildren;
+    }
+  }
+  if ($Expunge) {
+    $IMAP->expunge();
+  }
+
+
+  # Sleep and reconnect to server.
+  # Use scalable backoff if server is unavailable.
+
+  $IMAP = $IMAP -> disconnect();
+  my $connected;
+  my $delayTime = $Conf{delay};
+  do {
+    sleep $delayTime;
+    $delayTime *= 2;
+    if ($delayTime > $Conf{maxdelay}) {
+      $delayTime = $Conf{maxdelay};
+    }
+    $connected = $IMAP -> connect();
+  }
+  while (!$connected);
+
+  $IMAP -> select($Conf{inbox});
+}
+
+sub catch_zap { # Orderly shutdown, remove PID file
+  unlink $Conf{pidfile};
+  open  MIDFILE,">$Conf{midfile}";
+  print MIDFILE $LastMID,"\n";
+  close MIDFILE;
+
+  &log("shutdown");
+
+  close LOG;
+
+  die "Exiting IMAPAssassin.\n";
+}
+
+sub log  { #print to the log file
+  my $timestamp = localtime time;
+  my $msg = shift;
+  print LOG "$timestamp - $msg\n"
+}
+
+sub numerically {$a <=> $b;}
+
+sub cleanupchildren {
+  1 while (my $kid = waitpid(-1,&WNOHANG) > 0);
+}
+
+
+
+use Socket;
+ue IO::Handle;
+
+sub procmail {
+  my ($message) = @_;
+
+  unless (socketpair (PROCMAIL, PARENT, AF_UNIX, SOCK_STREAM, PF_UNSPEC)) {
+    &log("socketpair failed: $!");
+    return undef;
+  }
+
+  PROCMAIL->autoflush(1);
+  PARENT->autoflush(1);
+
+  my $pid;
+  if ($pid = fork()) {
+    close PARENT;
+    print PROCMAIL $message;
+    my $resultline = <PROCMAIL>;
+    my $result;
+    if ($resultline =~ /^X-ProcIMAP:\s+(.*)/) {
+      $result = $1;
+    }
+    # else, $resultline was part of message; glue it back while reading rest
+    my $message = join ("", $result ? "" : $resultline, <PROCMAIL>);
+    close PROCMAIL;
+    waitpid($pid, 0);
+    ######## FIXME: not necessarily useful?
+    &log("procmail's exit status: $?");
+    return ($result || undef, $message);
+  } else {
+    unless (defined $pid) {
+      &log("Cannot fork: $!");
+      return undef;
+    }
+    close PROCMAIL;
+    close STDIN;
+    close STDOUT;
+    close STDERR;
+    open (STDIN,  "<&PARENT") || die "Could not dup procmail's STDIN: $!\n";
+    open (STDOUT, ">&PARENT") || die "Could not dup procmail's STDOUT: $!\n";
+    open (STDERR, ">&LOG")    || die "Could not dup procmail's STDERR: $!\n";
+    ######## TODO: maybe add VAR=value assignments for PROCIMAPRC= etc
+    exec ("procmail", "-m", $Conf{procmailrc})
+	|| &log("Exec failed: $!");
+    return undef;
+  }
+}
