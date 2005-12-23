@@ -4,6 +4,8 @@
 # Process IMAP folder using Procmail
 #
 # Based on http://imapassassin.sourceforge.net/ -- forked && hacked extensively
+#
+# CVS version information in $CVSid below
 
 ######## TODO: pod
 ######## TODO: verbose diagnostics
@@ -18,6 +20,7 @@ use Getopt::Long;
 umask 077;
 
 our $VERSION = 0.01;			######## TODO: update for new version
+our $CVSid = '$Id: procimap,v 1.3 2005-12-23 15:40:23 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
 
@@ -29,37 +32,104 @@ my $ConfFile   = "$ConfDir/procimap.conf";
 my $GroupAccessOK = 0;			######## FIXME: currently hardcoded
 
 ######## FIXME: temporary
-$ConfFile = "procimap.conf";		######## DEBUG
-$GroupAccessOK = 1;			######## DEBUG
+$GroupAccessOK = 1;			######## FIXME: DEBUG
+
+
 
 # Parse options
 
 my %Conf = ();
 
-my $Help = "$me version $VERSION\n";
+my $Help = "$me - sort IMAP mailbox using procmail
+Version $VERSION\n";
 {
-  my @help =
-      ( [ 'config',  'c', '=s', 'filename',
-				'Use an alternative configuration file',
-				'~/.procimap/procimap.conf'],
-	[ 'verbose', 'v', '!', '', 'Enable verbose diagnostics' ],
-	[ 'help',    'h', '!', '', 'This help message' ],
-       );
- my (@options);
+  my $pod = <<'=cut';
+
+=head1 NAME
+
+procimap - sort IMAP mailbox using procmail
+
+=head1 SYNOPSIS
+
+B<procimap> I<options ...>
+
+=head1 DESCRIPTION
+
+######## TODO: write
+
+=head2 OPTIONS
+
+B<procimap> accepts the following options.
+Each is listed with its short form (when available) first,
+followed by the equivalent long option,
+followed by arguments, if any.
+
+=over 5
+
+=item B<-c> B<--config> I<file>
+
+=for Getopt::Long
+c config  =s Use an alternative configuration file
+
+Use I<file> as the configuration file
+instead of F<~/.procimap/procimap.conf>
+
+
+=item B<-V> B<--verbose>
+
+=for Getopt::Long
+V verbose !  Enable verbose diagnostics
+
+Enable verbose diagnostics
+
+
+=item B<-v> B<--version>
+
+=for Getopt::Long
+
+v version !  Print version number and exit
+
+Print version number and exit.
+
+=item B<-h> B<--help>
+
+=for Getopt::Long
+h help    !  Print a short help message
+
+Print a short help message and exit.
+
+=back
+
+=cut
+
+  my (@options);
   local $^A = "";
-  while (my $helprec = shift @help) {
-    my ($long, $short, $type, $subtype, $description, $default) = @{$helprec};
-    formline <<'________HERE', $short, '|', $long, $description, $description;
+  while ($pod =~ m/^=for Getopt::Long\s*(?:\n\s*)*\n(.*)\n\s*\n/mg) {
+    my $option = $1;
+    if ($option =~ /^\s*(\S+)\s+(\S+)\s+(\S+)\s+(.*?)\s*/) {
+      my ($short, $long, $type, $desc) = ($1, $2, $3, $4);
+     formline <<'________HERE', $short, '|', $long, $desc, $desc;
   -@@--@<<<<<<<<  ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 ~~                ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 ________HERE
-    push @options, "$long|$short$type";
+      push @options, "$long|$short$type";
+    }
+    else {
+      die "$me: Internal error: $1\n";
+    }
   }
+  die "$0: Internal error: no options defined\n" unless @options;
+
   $Help .= $^A;
 
   my $getopt = GetOptions (\%Conf, @options);
 
   die $Help if $Conf{help};
+
+  if ($Conf{version}) {
+    print "$me $VERSION ($CVSid)\n";
+    exit 0;
+  }
 }
 
 
