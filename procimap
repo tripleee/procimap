@@ -5,46 +5,92 @@
 #
 # Based on http://imapassassin.sourceforge.net/ -- forked && hacked extensively
 
+######## TODO: pod
+######## TODO: verbose diagnostics
+######## TODO: more debugging hooks
+
 use strict;
 use warnings;
 
 use POSIX ":sys_wait_h";
+use Getopt::Long;
 
 umask 077;
+
+our $VERSION = 0.01;			######## TODO: update for new version
+our $me = $0;
+$me =~ s,.*/,,;
 
 my $ConfDir    = "$ENV{HOME}/.procimap";
 my $ConfFile   = "$ConfDir/procimap.conf";
 
+# Whether group read/write access to configuration file should be tolerated
+######## FIXME: make this an installation-time preference, or something
+my $GroupAccessOK = 0;			######## FIXME: currently hardcoded
+
+######## FIXME: temporary
+$ConfFile = "procimap.conf";		######## DEBUG
+$GroupAccessOK = 1;			######## DEBUG
+
+# Parse options
+
+my %Conf = ();
+
+my $Help = "$me version $VERSION\n";
 {
-  ######## FIXME: this is awfully U*x-centric; "use filetest" instead?
+  my @help =
+      ( [ 'config',  'c', '=s', 'filename',
+				'Use an alternative configuration file',
+				'~/.procimap/procimap.conf'],
+	[ 'verbose', 'v', '!', '', 'Enable verbose diagnostics' ],
+	[ 'help',    'h', '!', '', 'This help message' ],
+       );
+ my (@options);
+  local $^A = "";
+  while (my $helprec = shift @help) {
+    my ($long, $short, $type, $subtype, $description, $default) = @{$helprec};
+    formline <<'________HERE', $short, '|', $long, $description, $description;
+  -@@--@<<<<<<<<  ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+~~                ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+________HERE
+    push @options, "$long|$short$type";
+  }
+  $Help .= $^A;
 
-  ######## FIXME: make this an installation-time preference, or something
-  my $group_is_ok = 1;		# Set to 0 to disallow group access
-  my ($readablemask, $writablemask) =
-      map { $_ & $group_is_ok ? 077 : 007 } (044, 022);
+  my $getopt = GetOptions (\%Conf, @options);
 
-  my @stat = stat ($ConfFile) || die "$0: Could not stat $ConfFile: $!\n";
-
-  die "$0: configuration file $ConfFile group/world readable\n"
-      if ($stat[2] & $readablemask);
-  die "$0: configuration file $ConfFile group/world writable\n"
-      if ($stat[2] & $writablemask);
+  die $Help if $Conf{help};
 }
+
 
 # Read in configuration file
 
-my %Conf = ();
+{
+  ######## FIXME: this is awfully U*x-centric; "use filetest" instead?
+  my ($readablemask, $writablemask) =
+      map { $_ & ($GroupAccessOK ? 007 : 077) } (044, 022);
+
+  my @stat = stat ($ConfFile) or die "$me: Could not stat $ConfFile: $!\n";
+  ######## FIXME: make the diagnostic more precise
+  die "$me: configuration file $ConfFile is group/world readable\n"
+      if ($stat[2] & $readablemask);
+  die "$me: configuration file $ConfFile is group/world writable\n"
+      if ($stat[2] & $writablemask);
+}
+
+
 open CONF,$ConfFile
-    || die "$0: Could not open $ConfFile: $!\n";
+    || die "$me: Could not open $ConfFile: $!\n";
 while (my $line = <CONF>)
 {
   next if ($line =~ /^\s*(?:$|\#)/);
   unless ($line =~ m/^(\S+)\s+(\S,*)/)
   {
-    die "$0: $ConfFile:$.: Invalid directive $_";
+    die "$me: $ConfFile:$.: Invalid directive $_";
   }
+  ######## TODO: warnings for unsupported directives
   my ($key,$value) = (lc($1), $2);
-  $Conf{$key} = $value;
+  $Conf{$key} = $value unless defined $Conf{$key};
 }
 close CONF;
 
@@ -58,14 +104,14 @@ $Conf{procmailrc} |= "$ENV{HOME}/.procimap/procimap.rc";
 $Conf{delay} |= 60;
 $Conf{maxdelay} |= 600;
 
-die "$0: No server defined\n" unless $Conf{server};
-die "$0: No user name defined\n" unless $Conf{user};
-die "$0: No password defined\n" unless $Conf{password};
+die "$me: No server defined\n" unless $Conf{server};
+die "$me: No user name defined\n" unless $Conf{user};
+die "$me: No password defined\n" unless $Conf{password};
 
 #open the log file
 
 open (LOG, defined $Conf{logfile} ? ">>$Conf{logfile}" : ">&STDERR")
-    || die "$0: Could not open $Conf{logfile} for writing: $!\n";
+    || die "$me: Could not open $Conf{logfile} for writing: $!\n";
 autoflush LOG 1;
 &log("startup");
 
@@ -92,7 +138,7 @@ $SIG{TERM} = $SIG{INT} = \&catch_zap;
 
 if (-e $Conf{pidfile}) {
   open  PIDFILE,"$Conf{pidfile}"
-      || die "$0: Could not open $Conf{pidfile}: $!\n";
+      || die "$me: Could not open $Conf{pidfile}: $!\n";
   my $OldPID = <PIDFILE>;
   chomp $OldPID;
   close PIDFILE;
@@ -106,7 +152,7 @@ if (-e $Conf{pidfile}) {
 my $PrevMID = 0;
 if (-e $Conf{midfile}) {
   open  MIDFILE,"$Conf{midfile}"
-      || die "$0: Could not open $Conf{midfile}: $!\n";
+      || die "$me: Could not open $Conf{midfile}: $!\n";
   $PrevMID = <MIDFILE>;
   chomp $PrevMID;
   close MIDFILE;
@@ -116,7 +162,7 @@ my $LastMID = $PrevMID;
 # Write new PID file
 
 open  PIDFILE,">$Conf{pidfile}"
-    || die "$0: Could not open $Conf{pidfile} for writing: $!\n";
+    || die "$me: Could not open $Conf{pidfile} for writing: $!\n";
 print PIDFILE $$,"\n";
 close PIDFILE;
 
@@ -131,7 +177,7 @@ use Mail::IMAPClient;	   # ... but 2.1.4 has non-numeric version )-:
 my $IMAP = Mail::IMAPClient -> new (Server   => $Conf{server},
                                     User     => $Conf{user},
                                     Password => $Conf{password})
-    or die "$0: Connection to $Conf{user}\@$Conf{server} failed: $@\n";
+    or die "$me: Connection to $Conf{user}\@$Conf{server} failed: $@\n";
 $IMAP -> select($Conf{inbox});
 $IMAP->Peek(1);
 
