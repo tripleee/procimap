@@ -20,7 +20,7 @@ use Getopt::Long;
 umask 077;
 
 our $VERSION = 0.01;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.5 2005-12-27 14:46:19 era Exp $';
+our $CVSid = '$Id: procimap,v 1.6 2005-12-27 14:49:43 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
 
@@ -82,18 +82,18 @@ Enable verbose diagnostics
 =item B<-v> B<--version>
 
 =for Getopt::Long
-
 v version !  Print version number and exit
 
 Print version number and exit.
 
+
 =item B<-h> B<--help>
 
 =for Getopt::Long
-
 h help    !  Print a short help message
 
 Print a short help message and exit.
+
 
 =back
 
