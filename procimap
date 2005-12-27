@@ -20,12 +20,9 @@ use Getopt::Long;
 umask 077;
 
 our $VERSION = 0.01;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.3 2005-12-23 15:40:23 era Exp $';
+our $CVSid = '$Id: procimap,v 1.4 2005-12-27 05:53:32 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
-
-my $ConfDir    = "$ENV{HOME}/.procimap";
-my $ConfFile   = "$ConfDir/procimap.conf";
 
 # Whether group read/write access to configuration file should be tolerated
 ######## FIXME: make this an installation-time preference, or something
@@ -33,7 +30,6 @@ my $GroupAccessOK = 0;			######## FIXME: currently hardcoded
 
 ######## FIXME: temporary
 $GroupAccessOK = 1;			######## FIXME: DEBUG
-
 
 
 # Parse options
@@ -135,28 +131,32 @@ ________HERE
 
 # Read in configuration file
 
+$Conf{statedir} = "$ENV{HOME}/.procimap";
+$Conf{config} ||= "$Conf{statedir}/procimap.conf";
+
 {
   ######## FIXME: this is awfully U*x-centric; "use filetest" instead?
   my ($readablemask, $writablemask) =
       map { $_ & ($GroupAccessOK ? 007 : 077) } (044, 022);
 
-  my @stat = stat ($ConfFile) or die "$me: Could not stat $ConfFile: $!\n";
+  my @stat = stat ($Conf{config})
+      or die "$me: Could not stat $Conf{config}: $!\n";
   ######## FIXME: make the diagnostic more precise
-  die "$me: configuration file $ConfFile is group/world readable\n"
+  die "$me: configuration file $Conf{config} is group/world readable\n"
       if ($stat[2] & $readablemask);
-  die "$me: configuration file $ConfFile is group/world writable\n"
+  die "$me: configuration file $Conf{config} is group/world writable\n"
       if ($stat[2] & $writablemask);
 }
 
 
-open CONF,$ConfFile
-    || die "$me: Could not open $ConfFile: $!\n";
+open CONF,$Conf{config}
+    || die "$me: Could not open $Conf{config}: $!\n";
 while (my $line = <CONF>)
 {
   next if ($line =~ /^\s*(?:$|\#)/);
   unless ($line =~ m/^(\S+)\s+(\S,*)/)
   {
-    die "$me: $ConfFile:$.: Invalid directive $_";
+    die "$me: $Conf{config}:$.: Invalid directive $_";
   }
   ######## TODO: warnings for unsupported directives
   my ($key,$value) = (lc($1), $2);
@@ -164,15 +164,14 @@ while (my $line = <CONF>)
 }
 close CONF;
 
-$Conf{statedir} |= $ConfDir;
-$Conf{pidfile} |= "$Conf{statedir}/procimap.pid";
-$Conf{midfile} |= "$Conf{statedir}/procimap.mid";
+$Conf{pidfile} ||= "$Conf{statedir}/procimap.pid";
+$Conf{midfile} ||= "$Conf{statedir}/procimap.mid";
 
 ######## FIXME: debugging location; update for production
-$Conf{procmailrc} |= "$ENV{HOME}/.procimap/procimap.rc";
+$Conf{procmailrc} ||= "$ENV{HOME}/.procimap/procimap.rc";
 
-$Conf{delay} |= 60;
-$Conf{maxdelay} |= 600;
+$Conf{delay} ||= 60;
+$Conf{maxdelay} ||= 600;
 
 die "$me: No server defined\n" unless $Conf{server};
 die "$me: No user name defined\n" unless $Conf{user};
@@ -181,6 +180,7 @@ die "$me: No password defined\n" unless $Conf{password};
 #open the log file
 
 open (LOG, defined $Conf{logfile} ? ">>$Conf{logfile}" : ">&STDERR")
+    ######## FIXME: diagnostics are wrong when no logfile is defined
     || die "$me: Could not open $Conf{logfile} for writing: $!\n";
 autoflush LOG 1;
 &log("startup");
@@ -231,8 +231,8 @@ my $LastMID = $PrevMID;
 
 # Write new PID file
 
-open  PIDFILE,">$Conf{pidfile}"
-    || die "$me: Could not open $Conf{pidfile} for writing: $!\n";
+open (PIDFILE,">$Conf{pidfile}")
+    or die "$me: Could not open $Conf{pidfile} for writing: $!\n";
 print PIDFILE $$,"\n";
 close PIDFILE;
 
@@ -310,7 +310,8 @@ while (1) {
 
 sub catch_zap { # Orderly shutdown, remove PID file
   unlink $Conf{pidfile};
-  open  MIDFILE,">$Conf{midfile}";
+  open (MIDFILE,">$Conf{midfile}")
+      or die "Could not open $Conf{midfile} for writing: $!\n";
   print MIDFILE $LastMID,"\n";
   close MIDFILE;
 
