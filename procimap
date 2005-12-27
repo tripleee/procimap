@@ -20,7 +20,7 @@ use Getopt::Long;
 umask 077;
 
 our $VERSION = 0.01;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.4 2005-12-27 05:53:32 era Exp $';
+our $CVSid = '$Id: procimap,v 1.5 2005-12-27 14:46:19 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
 
@@ -90,6 +90,7 @@ Print version number and exit.
 =item B<-h> B<--help>
 
 =for Getopt::Long
+
 h help    !  Print a short help message
 
 Print a short help message and exit.
@@ -98,16 +99,22 @@ Print a short help message and exit.
 
 =cut
 
+  ######## FIXME: use Pod::Usage instead once it works more like this
   my (@options);
   local $^A = "";
   while ($pod =~ m/^=for Getopt::Long\s*(?:\n\s*)*\n(.*)\n\s*\n/mg) {
     my $option = $1;
-    if ($option =~ /^\s*(\S+)\s+(\S+)\s+(\S+)\s+(.*?)\s*/) {
+    if ($option =~ /^\s*(\S+)\s+(\S+)\s+(\S+)\s+(.*?)\s*$/) {
       my ($short, $long, $type, $desc) = ($1, $2, $3, $4);
-     formline <<'________HERE', $short, '|', $long, $desc, $desc;
+     formline <<'________HERE',
   -@@--@<<<<<<<<  ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-~~                ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+       ~          ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+       ~          ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+       ~          ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+       ~          ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+       ~          ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 ________HERE
+	 $short, '|', $long, $desc, $desc, $desc, $desc, $desc, $desc;
       push @options, "$long|$short$type";
     }
     else {
@@ -118,9 +125,12 @@ ________HERE
 
   $Help .= $^A;
 
-  my $getopt = GetOptions (\%Conf, @options);
+  GetOptions (\%Conf, @options) || exit 2;
 
-  die $Help if $Conf{help};
+  if ($Conf{help}) {
+    print $Help;
+    exit 1;
+  }
 
   if ($Conf{version}) {
     print "$me $VERSION ($CVSid)\n";
