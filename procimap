@@ -7,9 +7,10 @@
 #
 # CVS version information in $CVSid below
 
-######## TODO: pod
+######## TODO: finish pod
 ######## TODO: verbose diagnostics
 ######## TODO: more debugging hooks
+######## TODO: make GroupAccessOK properly configurable
 
 use strict;
 use warnings;
@@ -20,7 +21,7 @@ use Getopt::Long;
 umask 077;
 
 our $VERSION = 0.01;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.6 2005-12-27 14:49:43 era Exp $';
+our $CVSid = '$Id: procimap,v 1.7 2005-12-28 15:04:06 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
 
@@ -164,7 +165,7 @@ open CONF,$Conf{config}
 while (my $line = <CONF>)
 {
   next if ($line =~ /^\s*(?:$|\#)/);
-  unless ($line =~ m/^(\S+)\s+(\S,*)/)
+  unless ($line =~ m/^(\S+)\s+(\S.*)/)
   {
     die "$me: $Conf{config}:$.: Invalid directive $_";
   }
