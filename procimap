@@ -23,7 +23,7 @@ use Getopt::Long;
 umask 077;
 
 our $VERSION = 0.01;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.9 2005-12-28 20:03:30 era Exp $';
+our $CVSid = '$Id: procimap,v 1.10 2005-12-28 20:03:57 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
 
@@ -565,3 +565,60 @@ sub procmail {
     return undef;
   }
 }
+
+
+=head1 FILES
+
+=over 12
+    
+=item F<./procimaprc>
+
+The Procmail recipes in this file are run by default.
+
+This can be overridden using the B<--procmailrc> options.
+
+=item F<~/.procimap/procimap.conf>
+
+The settings are retrieved from this file by default.
+
+=item F<~/.procimap/>
+
+The default B<--statedir> directory.
+
+=back
+
+
+=head1 SEE ALSO
+
+L<spamassassin(1)>,
+L<procmail(1)>,
+L<procmailrc(5)>;
+L<Mail::IMAPClient(3p)>
+
+
+=head1 BUGS
+
+Requires a configuration file to be present
+even when all required parameters are passed in as command-line options.
+
+
+=head1 LICENSE
+
+The code is partially derived from IMAPassassin
+L<http://imapassassin.sourceforge.net/>
+which is allegedly GPL (though it's not very explicit).
+
+Therefore, this fork of the code is necessarily
+licensed under the GPL as well.
+
+The author of this fork is more than willing to discuss
+relicensing under a "new style" BSD license
+if that is any help.
+
+
+=head1 AUTHOR
+
+era eriksson
+L<http://www.iki.fi/era/>
+
+=cut
