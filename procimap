@@ -8,6 +8,9 @@
 # CVS version information in $CVSid below
 
 ######## TODO: finish pod
+######## TODO: --verbose (currently a no-op)
+######## TODO: --single-run
+######## TODO: --dump-config
 ######## TODO: verbose diagnostics
 ######## TODO: more debugging hooks
 ######## TODO: make GroupAccessOK properly configurable
@@ -21,7 +24,7 @@ use Getopt::Long;
 umask 077;
 
 our $VERSION = 0.01;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.7 2005-12-28 15:04:06 era Exp $';
+our $CVSid = '$Id: procimap,v 1.8 2005-12-28 19:45:57 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
 
@@ -37,8 +40,7 @@ $GroupAccessOK = 1;			######## FIXME: DEBUG
 
 my %Conf = ();
 
-my $Help = "$me - sort IMAP mailbox using procmail
-Version $VERSION\n";
+my $Help = "$me - sort IMAP mailbox using procmail - version $VERSION\n";
 {
   my $pod = <<'=cut';
 
@@ -52,9 +54,15 @@ B<procimap> I<options ...>
 
 =head1 DESCRIPTION
 
-######## TODO: write
+B<procimap> provides a facility for applying Procmail recipes
+to a remote IMAP mailbox.
 
-=head2 OPTIONS
+Due to the nature of IMAP, some concepts of Procmail
+work quite differently in this setting.
+These issues are described in more detail below in L<|Procmail Recipes>.
+
+
+=head2 Options
 
 B<procimap> accepts the following options.
 Each is listed with its short form (when available) first,
@@ -63,13 +71,130 @@ followed by arguments, if any.
 
 =over 5
 
+=item B<--server> I<servername>
+
+=for Getopt::Long
+s server =s Specify which IMAP server to connect to
+
+Connect to the IMAP server I<servername>.
+
+
+=item B<--user> I<username>
+
+=for Getopt::Long
+u user =s User account name on IMAP server
+
+Log on on the specified IMAP server as I<usrename>.
+
+
+=item B<--password> I<password>
+
+=for Getopt::Long
+p password =s Password for IMAP server (careful!)
+
+Use I<password> for logging in on the IMAP server.
+
+You should take extreme caution with this option.
+It is only really meant for debugging.
+On a multi-user system, anybody can see the
+values of the options you pass to your programs
+in a simple L<ps(1)> listing.
+
+
+=item B <--expunge>
+
+=for Getopt::Long
+x  expunge !  Expunge deleted messages when disconnecting
+
+By default, B<procimap> leaves deleted messages on the server;
+they are only marked as deleted.
+But if you enable this option, deleted messages will be expunged
+at the end of the session.
+
+Use this option with caution;
+expunged messages cannot be recovered.
+
+
+=item B <--delay> I<n>
+
+=for Getopt::Long
+d  delay  =i  Delay this many seconds between reconnects
+
+Specify, in seconds, how long to delay before reconnecting to the server.
+
+The default delay is 60 seconds.
+
+
+=item B<--maxdelay> I<n>
+
+=for Getopt::Long
+- maxdelay =i  Maximum delay when server is unavailable
+
+Normally, the delay between reconnects is simply
+whatever is specified in the B<delay> parameter.
+However, if the server is unavailable when a reconnect is attempted,
+the program will delay again, progressively making
+each delay longer until it reaches this value.
+
+The default maximum delay is 600 seconds (10 minutes).
+
+
+=item B<--statedir> I<directory>
+
+=for Getopt::Long
+-  statedir =s  Directory to use for state files
+
+B<procimap> maintains state information between runs
+in the specified directory.
+This is also where the log file ends up by default.
+
+The default state directory is F<~/.procimap>
+
+
+=item B<--pidfile> I<file>
+
+=for Getopt::Long
+- pidfile =s    File to use for storing PID
+
+B<procimap> needs to keep track of its own process ID (PID)
+to be useful as a background program.
+
+By default, the process ID is saved in F<procimap.pid>.
+
+Relative file names are interpreted relative to the I<statedir>.
+
+
+=item B<--midfile> I<file>
+
+=for Getopt::Long
+- midfile =s    File to use for storing latest MID
+
+B<procimap> needs to keep track of which messages it has seen.
+
+By default, the index number of the newest message B<procimap>
+has already processed is saved in F<procimap.mid>.
+
+Relative file names are interpreted relative to the I<statedir>.
+
+
+=item B<--logfile> I<file>
+
+=for Getopt::Long
+l logfile =s  Redirect log output to file
+
+By default, B<procimap> prints logging information to standard error.
+These log messages can be redirected to a file with this directive.
+
+Relative file names are interpreted relative to the current directory.
+
+
 =item B<-c> B<--config> I<file>
 
 =for Getopt::Long
-c config  =s Use an alternative configuration file
+c config  =s  Use an alternative configuration file
 
 Use I<file> as the configuration file
-instead of F<~/.procimap/procimap.conf>
+instead of F<~/.procimap/procimap.conf>.
 
 
 =item B<-V> B<--verbose>
@@ -85,18 +210,34 @@ Enable verbose diagnostics
 =for Getopt::Long
 v version !  Print version number and exit
 
-Print version number and exit.
+Print version number and exit
 
 
 =item B<-h> B<--help>
 
 =for Getopt::Long
-h help    !  Print a short help message
+h help    !  Print this short help message and exit
 
-Print a short help message and exit.
+Print a short help message and exit
 
 
 =back
+
+
+=head2 Configuration File Directives
+
+In addition to the options listed above,
+B<procimap> can read options from a configuration file.
+All of the options listed above can be specified
+in the configuration file as well
+(except for the ones which only make sense interactively,
+i.e. B<version>, B<help>, and, for unrelated reasons, B<config>).
+Options specified on the command line
+take precedence over the directives in the configuration file.
+The syntax is simple; one directive per line,
+keyword followed by value, separated by whitespace.
+Leading and trailing whitespace is trimmed.
+
 
 =cut
 
@@ -107,15 +248,17 @@ Print a short help message and exit.
     my $option = $1;
     if ($option =~ /^\s*(\S+)\s+(\S+)\s+(\S+)\s+(.*?)\s*$/) {
       my ($short, $long, $type, $desc) = ($1, $2, $3, $4);
+      $short = "" if ($short eq "-");
      formline <<'________HERE',
-  -@@--@<<<<<<<<  ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+  @<<--@<<<<<<<<< ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
        ~          ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
        ~          ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
        ~          ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
        ~          ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
        ~          ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 ________HERE
-	 $short, '|', $long, $desc, $desc, $desc, $desc, $desc, $desc;
+	 ($short ? "-$short|" : "   "), $long,
+	     $desc, $desc, $desc, $desc, $desc, $desc;
       push @options, "$long|$short$type";
     }
     else {
@@ -142,8 +285,8 @@ ________HERE
 
 # Read in configuration file
 
-$Conf{statedir} = "$ENV{HOME}/.procimap";
-$Conf{config} ||= "$Conf{statedir}/procimap.conf";
+$Conf{statedir_default} = "$ENV{HOME}/.procimap";
+$Conf{config} ||= "$Conf{statedir_default}/procimap.conf";
 
 {
   ######## FIXME: this is awfully U*x-centric; "use filetest" instead?
@@ -165,21 +308,36 @@ open CONF,$Conf{config}
 while (my $line = <CONF>)
 {
   next if ($line =~ /^\s*(?:$|\#)/);
-  unless ($line =~ m/^(\S+)\s+(\S.*)/)
+  unless ($line =~ m/^(\S+)\s+(\S.*?)\s*$/)
   {
     die "$me: $Conf{config}:$.: Invalid directive $_";
   }
   ######## TODO: warnings for unsupported directives
   my ($key,$value) = (lc($1), $2);
-  $Conf{$key} = $value unless defined $Conf{$key};
+  $Conf{$key} = $value;
 }
 close CONF;
 
-$Conf{pidfile} ||= "$Conf{statedir}/procimap.pid";
-$Conf{midfile} ||= "$Conf{statedir}/procimap.mid";
+
+$Conf{statedir} ||= $Conf{statedir_default};
+$Conf{pidfile} ||= "procimap.pid";
+$Conf{midfile} ||= "procimap.mid";
+
+# Resolve ~/ to $ENV{HOME}/
+
+$Conf{statedir} =~ s%^~%$ENV{HOME}%;
+$Conf{pidfile} =~ s%^~/%$ENV{HOME}/%;
+$Conf{midfile} =~ s%^~/%$ENV{HOME}/%;
+$Conf{logfile} =~ s%^~/%$ENV{HOME}/%;
+
+# Relative paths are interpreted as relative to $Conf{statedir}
+# except explicit ./filename
+
+$Conf{pidfile} =~ s%^([^/,]|\.[^/])%$Conf{statedir}$1%;
+$Conf{midfile} =~ s%^([^/.]|\.[^/])%$Conf{statedir}$1%;
 
 ######## FIXME: debugging location; update for production
-$Conf{procmailrc} ||= "$ENV{HOME}/.procimap/procimap.rc";
+$Conf{procmailrc} ||= "procimap.rc";
 
 $Conf{delay} ||= 60;
 $Conf{maxdelay} ||= 600;
@@ -188,7 +346,8 @@ die "$me: No server defined\n" unless $Conf{server};
 die "$me: No user name defined\n" unless $Conf{user};
 die "$me: No password defined\n" unless $Conf{password};
 
-#open the log file
+
+# Open the log file
 
 open (LOG, defined $Conf{logfile} ? ">>$Conf{logfile}" : ">&STDERR")
     ######## FIXME: diagnostics are wrong when no logfile is defined
