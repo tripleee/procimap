@@ -8,9 +8,7 @@
 # CVS version information in $CVSid below
 
 ######## TODO: finish POD (section Procmail Recipes)
-######## TODO: --verbose (currently a no-op)
 ######## TODO: --dump-config
-######## TODO: verbose diagnostics
 ######## TODO: more debugging hooks
 ######## TODO: make GroupAccessOK properly configurable
 
@@ -23,7 +21,7 @@ use Getopt::Long;
 umask 077;
 
 our $VERSION = 0.01;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.12 2005-12-29 17:21:56 era Exp $';
+our $CVSid = '$Id: procimap,v 1.13 2005-12-29 17:43:09 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
 
@@ -342,6 +340,7 @@ $Conf{config} ||= "$Conf{statedir_default}/procimap.conf";
 
 open CONF,$Conf{config}
     || die "$me: Could not open $Conf{config}: $!\n";
+&log("Reading $Conf{config}") if $Conf{verbose};
 while (my $line = <CONF>)
 {
   next if ($line =~ /^\s*(?:$|\#)/);
@@ -395,6 +394,14 @@ open (LOG, defined $Conf{logfile} ? ">>$Conf{logfile}" : ">&STDERR")
 autoflush LOG 1;
 &log("startup");
 
+if ($Conf{verbose}) {
+  for my $param (qw(config procmailrc
+		statedir logfile pidfile midfile delay maxdelay
+		expunge single-run wrapper)) {
+    my $logval = defined $Conf{"$param"} ? "'$Conf{$param}'" : '(undef)';
+    &log("\$Conf{$param} is $logval");
+  }
+}
 
 unless (defined $Conf{expunge}) {
   &log("expunge preference not explicitly set; defaulting to 0");
@@ -422,11 +429,15 @@ if (-e $Conf{pidfile}) {
   my $OldPID = <PIDFILE>;
   chomp $OldPID;
   close PIDFILE;
+  &log("Read $Conf{pidfile}") if $Conf{verbose};
 
   my $Group = getpgrp $OldPID;
   if ($Group > 0) {
-    exit;
+    &log("Process $OldPID still there -- not starting new instance");
+    exit 1;
   }
+  &log("Old PID $OldPID gone -- proceeding to start new instance")
+      if $Conf{verbose};
 }
 
 my $PrevMID = 0;
@@ -436,8 +447,11 @@ if (-e $Conf{midfile}) {
   $PrevMID = <MIDFILE>;
   chomp $PrevMID;
   close MIDFILE;
+  &log("Read $Conf{midfile}") if $Conf{verbose};
 }
 my $LastMID = $PrevMID;
+&log("Starting from MID $LastMID") if $Conf{verbose};
+
 
 # Write new PID file
 
@@ -445,6 +459,7 @@ open (PIDFILE,">$Conf{pidfile}")
     or die "$me: Could not open $Conf{pidfile} for writing: $!\n";
 print PIDFILE $$,"\n";
 close PIDFILE;
+&log("PID $$ written to $Conf{pidfile}") if $Conf{verbose};
 
 
 #use Mail::IMAPClient 2.0; # Version >= 2.0 required for $@
@@ -452,7 +467,7 @@ use Mail::IMAPClient;	   # ... but 2.1.4 has non-numeric version )-:
 
 # Set up connection to IMAP
 
-#print "Inbox='$INBOX' SpamFolder='$SpamFolder' server='$Server' user='$User' password='$Password' delay='$Delay'";
+&log("Connecting to $Conf{server} as $Conf{user} ...") if $Conf{verbose};
 
 my $IMAP = Mail::IMAPClient -> new (Server   => $Conf{server},
                                     User     => $Conf{user},
@@ -477,18 +492,23 @@ while (1) {
 
       my $Message = $IMAP -> message_string($MID);
       my ($ResultAction, $NewMessage) = procmail($Message);
-      &log(" MID: $MID result: $ResultAction");
-      if ($ResultAction =~ /^move (.*)/) {
-
+      &log("MID: $MID result: $ResultAction");
+      if ($ResultAction =~ /^keep$/ || ! defined $ResultAction) {
+	# no action required
+	&log("Keeping message $MID") if $Conf{verbose};
+      }
+      elsif ($ResultAction =~ /^move (.*)/) {
+	my $folder = $1;
+	&log("Moving message $MID to $folder") if $Conf{verbose};
 	# Make copy in new folder; delete original
 	######## TODO: maybe add flags and timestamp of original message
-        my $AppendStatus = $IMAP->append_string($Conf{spamfolder},$NewMessage);
+        my $AppendStatus = $IMAP->append_string($folder, $NewMessage);
         if ($AppendStatus) {
           $IMAP->set_flag("Seen", $MID);
           $IMAP -> delete_message($MID);
 	  $Expunge = 1 if $Conf{expunge};
         } else {
-          &log("Error moving spam message!");
+          &log("Error moving message $MID");
         }
       }
       &cleanupchildren;
@@ -507,11 +527,13 @@ while (1) {
   my $connected;
   my $delayTime = $Conf{delay};
   do {
+    &log("Sleeping $delayTime seconds ...") if $Conf{verbose};
     sleep $delayTime;
     $delayTime *= 2;
     if ($delayTime > $Conf{maxdelay}) {
       $delayTime = $Conf{maxdelay};
     }
+    &log("Attempting to reconnect") if $Conf{verbose};
     $connected = $IMAP -> connect();
   }
   while (!$connected);
