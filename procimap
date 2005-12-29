@@ -23,7 +23,7 @@ use Getopt::Long;
 umask 077;
 
 our $VERSION = 0.01;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.11 2005-12-29 14:43:32 era Exp $';
+our $CVSid = '$Id: procimap,v 1.12 2005-12-29 17:21:56 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
 
@@ -548,7 +548,7 @@ sub cleanupchildren {
 
 
 use Socket;
-ue IO::Handle;
+use IO::Handle;
 
 sub procmail {
   my ($message) = @_;
