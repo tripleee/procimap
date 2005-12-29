@@ -21,7 +21,7 @@ use Getopt::Long;
 umask 077;
 
 our $VERSION = 0.01;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.13 2005-12-29 17:43:09 era Exp $';
+our $CVSid = '$Id: procimap,v 1.14 2005-12-29 20:28:29 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
 
@@ -340,7 +340,8 @@ $Conf{config} ||= "$Conf{statedir_default}/procimap.conf";
 
 open CONF,$Conf{config}
     || die "$me: Could not open $Conf{config}: $!\n";
-&log("Reading $Conf{config}") if $Conf{verbose};
+######## FIXME: cannot &log here because LOG isn't opened yet
+warn "Reading $Conf{config}" if $Conf{verbose};
 while (my $line = <CONF>)
 {
   next if ($line =~ /^\s*(?:$|\#)/);
@@ -473,7 +474,9 @@ my $IMAP = Mail::IMAPClient -> new (Server   => $Conf{server},
                                     User     => $Conf{user},
                                     Password => $Conf{password})
     or die "$me: Connection to $Conf{user}\@$Conf{server} failed: $@\n";
-$IMAP -> select($Conf{inbox});
+######## BUG: doesn't fail if server doesn't have an address (imap.fastmail.fm)
+$IMAP -> select($Conf{inbox})
+    or die "$me: Could not select $Conf{inbox}: ", $IMAP->LastError, "\n";
 $IMAP->Peek(1);
 
 my %Filtered = (); # Hash of already checked sequence #'s
@@ -490,8 +493,13 @@ while (1) {
 
       # Get message from IMAP and feed to procmail. Retrieve result.
 
+      &log("Retrieving message $MID") if $Conf{verbose};
       my $Message = $IMAP -> message_string($MID);
       my ($ResultAction, $NewMessage) = procmail($Message);
+      if (!defined $ResultAction) {
+	$ResultAction = 'keep';
+	&log("Undefined result from Procmail -> keep") if $Conf{verbose};
+      }
       &log("MID: $MID result: $ResultAction");
       if ($ResultAction =~ /^keep$/ || ! defined $ResultAction) {
 	# no action required
@@ -552,7 +560,7 @@ sub catch_zap { # Orderly shutdown, remove PID file
 
   close LOG;
 
-  die "Exiting IMAPAssassin.\n";
+  exit 0;
 }
 
 sub log  { #print to the log file
