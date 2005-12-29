@@ -21,7 +21,7 @@ use Getopt::Long;
 umask 077;
 
 our $VERSION = 0.01;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.15 2005-12-29 20:30:13 era Exp $';
+our $CVSid = '$Id: procimap,v 1.16 2005-12-29 20:31:10 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
 
@@ -109,6 +109,16 @@ It is only really meant for debugging.
 On a multi-user system, anybody can see the
 values of the options you pass to your programs
 in a simple L<ps(1)> listing.
+
+
+=item B<-i>|B<--inbox>
+
+=for Getopt::Long
+i  inbox =s  Name of inbox folder on server
+
+B<procimap> will filter messages only in the inbox folder on the server.
+
+The default name of the inbox folder is F<INBOX>.
 
 
 =item B<-x>|B<--expunge>
@@ -380,6 +390,8 @@ $Conf{logfile}  =~ s%^~/%$ENV{HOME}/% if defined $Conf{logfile};
 $Conf{pidfile} =~ s%^([^/,]|\.[^/])%$Conf{statedir}$1%;
 $Conf{midfile} =~ s%^([^/.]|\.[^/])%$Conf{statedir}$1%;
 
+$Conf{inbox} ||= "INBOX";
+
 $Conf{delay} ||= 60;
 $Conf{maxdelay} ||= 600;
 
@@ -397,9 +409,9 @@ autoflush LOG 1;
 &log("startup");
 
 if ($Conf{verbose}) {
-  for my $param (qw(config procmailrc
+  for my $param (qw(config procmailrc server user inbox
 		statedir logfile pidfile midfile delay maxdelay
-		expunge single-run wrapper)) {
+		expunge single-run wrapper)) {  # password
     my $logval = defined $Conf{"$param"} ? "'$Conf{$param}'" : '(undef)';
     &log("\$Conf{$param} is $logval");
   }
