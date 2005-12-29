@@ -21,7 +21,7 @@ use Getopt::Long;
 umask 077;
 
 our $VERSION = 0.01;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.18 2005-12-29 20:52:05 era Exp $';
+our $CVSid = '$Id: procimap,v 1.19 2005-12-29 20:53:22 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
 
@@ -241,6 +241,9 @@ in a library directory,
 but for debugging (or fooling around!),
 it can occasionally be useful to roll your own.
 
+B<NOTE:> You can mess up your local mail
+rather thoroughly if you use this carelessly.
+
 
 =item B<-V>|B<--verbose>
 
@@ -398,6 +401,8 @@ $Conf{maxdelay} ||= 600;
 die "$me: No server defined\n" unless $Conf{server};
 die "$me: No user name defined\n" unless $Conf{user};
 die "$me: No password defined\n" unless $Conf{password};
+
+die "$me: Cannot read $Conf{wrapper}" unless (-r $Conf{wrapper});
 
 
 # Open the log file
