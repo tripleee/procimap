@@ -21,7 +21,7 @@ use Getopt::Long;
 umask 077;
 
 our $VERSION = 0.01;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.16 2005-12-29 20:31:10 era Exp $';
+our $CVSid = '$Id: procimap,v 1.17 2005-12-29 20:33:34 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
 
@@ -606,8 +606,9 @@ sub procmail {
 
   my $pid;
   if ($pid = fork()) {
-    close PARENT;
+    &log ("Sending message to procmail PID $pid") if $Conf{verbose};
     print PROCMAIL $message;
+    shutdown (PROCMAIL; 1);	# Close for writing; signal eof to reader
     my $resultline = <PROCMAIL>;
     my $result;
     if ($resultline =~ /^X-ProcIMAP:\s+(.*)/) {
@@ -617,8 +618,8 @@ sub procmail {
     my $message = join ("", $result ? "" : $resultline, <PROCMAIL>);
     close PROCMAIL;
     waitpid($pid, 0);
-    ######## FIXME: not necessarily useful?
-    &log("procmail's exit status: $?");
+    ######## FIXME: bail out if procmail died from a signal or returned error
+    &log("procmail's exit status: " . ($? >> 8) . " (signal: " . ($? & 127) . ") ($?)");
     return ($result || undef, $message);
   } else {
     unless (defined $pid) {
