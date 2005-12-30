@@ -21,7 +21,7 @@ use Getopt::Long;
 umask 077;
 
 our $VERSION = 0.01;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.19 2005-12-29 20:53:22 era Exp $';
+our $CVSid = '$Id: procimap,v 1.20 2005-12-30 15:16:40 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
 
@@ -40,7 +40,6 @@ $Conf{default_wrapper} = "procimap.rc"; ######## FIXME: DEBUG
 
 # Parse options
 
-my $Help = "$me - sort IMAP mailbox using procmail - version $VERSION\n";
 {
   my $pod = <<'=cut';
 
@@ -68,6 +67,11 @@ B<procimap> accepts the following options.
 Each is listed with its short form (when available) first,
 followed by the equivalent long option,
 followed by arguments, if any.
+
+Those options which are marked as "advanced" are primarily
+useful for expert use and debugging of B<procimap>'s internals.
+Thus, they are not included in the regular B<--help> output,
+and should probably be ignored by casual readers of this documentation.
 
 =over 5
 
@@ -175,7 +179,7 @@ by the I<delay> parameter above.
 =item B<--statedir> I<directory>
 
 =for Getopt::Long
--  statedir =s  Directory to use for state files
+*  statedir =s  Directory to use for state files
 
 B<procimap> maintains state information between runs
 in the specified directory.
@@ -186,7 +190,7 @@ The default state directory is F<~/.procimap>
 =item B<--pidfile> I<file>
 
 =for Getopt::Long
-- pidfile =s    File to use for storing PID
+* pidfile =s    File to use for storing PID
 
 B<procimap> needs to keep track of its own process ID (PID)
 to be useful as a background program.
@@ -199,7 +203,7 @@ A relative file name is interpreted relative to the I<statedir>.
 =item B<--midfile> I<file>
 
 =for Getopt::Long
-- midfile =s    File to use for storing latest MID
+* midfile =s    File to use for storing latest MID
 
 B<procimap> needs to keep track of which messages it has seen.
 
@@ -230,7 +234,7 @@ instead of F<~/.procimap/procimap.conf>.
 =item B<--wrapper> I<file>
 
 =for Getopt::Long
-- wrapper =s Use an alternative procmailrc wrapper file
+* wrapper =s Use an alternative procmailrc wrapper file
 
 When B<procimap> runs the user's F<procimaprc> file,
 it invokes a system F<procimap.rc> wrapper file
@@ -250,7 +254,19 @@ rather thoroughly if you use this carelessly.
 =for Getopt::Long
 V verbose !  Enable verbose diagnostics
 
-Enable verbose diagnostics
+Enable verbose diagnostics, or, with B<--help>, verbose help.
+
+
+=item B<-h>|B<--help>
+
+=for Getopt::Long
+h help    !  Print this short help message and exit
+
+Print a short help message and exit.
+
+The regular help message lists only the common options;
+use B<--verbose> to get a full option listing
+which includes the "advanced" options.
 
 
 =item B<-v>|B<--version>
@@ -259,14 +275,6 @@ Enable verbose diagnostics
 v version !  Print version number and exit
 
 Print version number and exit
-
-
-=item B<-h>|B<--help>
-
-=for Getopt::Long
-h help    !  Print this short help message and exit
-
-Print a short help message and exit
 
 
 =back
@@ -289,6 +297,9 @@ Leading and trailing whitespace is trimmed.
 
 =cut
 
+  my $VerboseHelp =
+      "$me - sort IMAP mailbox using procmail - version $VERSION\n";
+
   ######## FIXME: use Pod::Usage instead once it works more like this
   my (@options);
   local $^A = "";
@@ -296,16 +307,18 @@ Leading and trailing whitespace is trimmed.
     my $option = $1;
     if ($option =~ /^\s*(\S+)\s+(\S+)\s+(\S+)\s+(.*?)\s*$/) {
       my ($short, $long, $type, $desc) = ($1, $2, $3, $4);
-      $short = "" if ($short eq "-");
+      my $shorthelp = " ";
+      $shorthelp = "*" if ($short eq "*");
+      $short = "" if ($short =~ /^[-*]$/);
       formline <<'________HERE',
-  @<<--@<<<<<<<<< ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+@ @<<--@<<<<<<<<< ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
        ~          ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
        ~          ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
        ~          ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
        ~          ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
        ~          ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 ________HERE
-	 ($short ? "-$short|" : "   "), $long, $desc,
+	 $shorthelp, ($short ? "-$short|" : "   "), $long, $desc,
 	     $desc, $desc, $desc, $desc, $desc;
       push @options, "$long|$short$type";
     }
@@ -315,12 +328,20 @@ ________HERE
   }
   die "$0: Internal error: no options defined\n" unless @options;
 
-  $Help .= $^A;
+  $VerboseHelp .= $^A;
+
+  # Construct abridged help message from verbose one
+  my $Help = $VerboseHelp;
+  $Help =~ s%^\*.*\n%%mg;
+  $Help .= "This is an abridged listing, which lacks some advanced options.\n";
+  $Help .= "Use --verbose --help to get a listing of all options.\n";
+
+  $VerboseHelp .= "An asterisk * in the margin marks advanced options.\n";
 
   GetOptions (\%Conf, @options) || exit 2;
 
   if ($Conf{help}) {
-    print $Help;
+    print $Conf{verbose} ? $VerboseHelp : $Help;
     exit 1;
   }
 
