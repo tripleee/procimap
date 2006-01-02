@@ -21,7 +21,7 @@ use Getopt::Long;
 umask 077;
 
 our $VERSION = 0.01;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.21 2005-12-30 15:18:41 era Exp $';
+our $CVSid = '$Id: procimap,v 1.22 2006-01-02 05:37:10 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
 
@@ -558,6 +558,10 @@ while (1) {
           &log("Error moving message $MID");
         }
       }
+      ######## TODO: handle $ResultAction == copy
+      ######## TODO: handle $ResultAction == delete
+      ######## TODO: warn about unsupported actions
+
       &cleanupchildren;
     }
   }
