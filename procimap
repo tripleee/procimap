@@ -7,7 +7,7 @@
 #
 # CVS version information in $CVSid below
 
-######## TODO: finish POD (section Procmail Recipes)
+######## TODO: implement IMAP copy and delete (== refactor move operation)
 ######## TODO: --dump-config
 ######## TODO: more debugging hooks
 ######## TODO: make GroupAccessOK properly configurable
@@ -21,7 +21,7 @@ use Getopt::Long;
 umask 077;
 
 our $VERSION = 0.01;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.25 2006-01-02 06:06:35 era Exp $';
+our $CVSid = '$Id: procimap,v 1.26 2006-01-02 18:06:03 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
 
@@ -307,6 +307,67 @@ The syntax is simple; one directive per line,
 keyword followed by value, separated by whitespace.
 Leading and trailing whitespace is trimmed.
 
+
+=head2 Procmail Recipes
+
+B<procimap> invokes Procmail on each message,
+by default running the Procmail recipes
+in the file F<procimaprc>.
+This file needs to follow some
+conventions in order to communicate properly
+with B<procimap>.
+
+First and foremost,
+I<no final delivery action should take place>
+as this would cause Procmail to stop processing the message,
+instead of communicating the filtering result
+back to B<procimap>.
+If you wish to deliver the message,
+use the cloning flag B<:c>
+to signal to Procmail to continue processing
+nevertheless.
+
+Your recipe should communicate a
+filtering result back to B<procimap>
+in the F<RESULT> variable.
+It should contain one of the following values.
+
+=over 6
+
+=item B<keep>
+
+Keep the message, i.e. simply leave it in the inbox.
+
+=item B<move> I<foldername>
+
+Move the message to the specified folder.
+The folder needs to exist on the server.
+
+You will probably need to find out
+what the server's folder separator is
+and what the folder hierarchy looks like.
+
+The message is deleted from the inbox
+once it is successfully stored in the
+destination folder.
+(IMAP does not have a native move operation,
+so this is implemented as copy + delete.)
+
+=cut
+######## TODO: implement these
+my $XXXXXXXignorepod = <<'=cut';
+
+#item B<copy> I<foldername>
+
+#item B<delete>
+
+=cut
+
+=back
+
+As a fallback mechanism,
+if F<RESULT> is unset when Procmail finishes,
+it is treated as if it were B<keep>.
 
 =cut
 
