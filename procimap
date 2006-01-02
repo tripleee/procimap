@@ -21,7 +21,7 @@ use Getopt::Long;
 umask 077;
 
 our $VERSION = 0.01;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.22 2006-01-02 05:37:10 era Exp $';
+our $CVSid = '$Id: procimap,v 1.23 2006-01-02 05:47:22 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
 
@@ -231,6 +231,19 @@ Use I<file> as the configuration file
 instead of F<~/.procimap/procimap.conf>.
 
 
+=item B<--message> I<file>
+
+=for Getopt::Long
+* message =s Use a canned message; do not connect to IMAP server
+
+For testing your B<procimaprc>, it is useful to
+be able to supply a message from a file
+instead of actually connecting to an IMAP server
+to download real live messages.
+
+Implies B<--single-run>.
+
+
 =item B<--wrapper> I<file>
 
 =for Getopt::Long
@@ -437,7 +450,7 @@ autoflush LOG 1;
 if ($Conf{verbose}) {
   for my $param (qw(config procmailrc server user inbox
 		statedir logfile pidfile midfile delay maxdelay
-		expunge single-run wrapper)) {  # password
+		expunge single-run message wrapper)) {  # password
     my $logval = defined $Conf{"$param"} ? "'$Conf{$param}'" : '(undef)';
     &log("\$Conf{$param} is $logval");
   }
@@ -454,6 +467,21 @@ if ($Conf{expunge} =~ /^(?:no?|off|x|false)$/i) {
 } elsif ($Conf{expunge} =~ /^(?:[^01]|[01].)/) {
   &log("Configuration file 'expunge' directive interpreted as " .
        $Conf{expunge} ? "1 (true)" : "0 (false)");
+}
+
+
+# If --message specified, handle and exit
+
+if ($Conf{message}) {
+  open (MESSAGE, "<$Conf{message}")
+      || die "$me: Could not open $Conf{message}: $!\n";
+  my $Message = join ("", <MESSAGE>);
+  close MESSAGE;
+
+  my ($ResultAction, $NewMessage) = procmail($Message);
+  &log("Result: ". defined $ResultAction ? "'$ResultAction'" : '(undef)' ."\n");
+  &log("Exiting,\n");
+  exit 0;
 }
 
 
