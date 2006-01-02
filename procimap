@@ -21,7 +21,7 @@ use Getopt::Long;
 umask 077;
 
 our $VERSION = 0.01;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.23 2006-01-02 05:47:22 era Exp $';
+our $CVSid = '$Id: procimap,v 1.24 2006-01-02 06:05:39 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
 
@@ -476,11 +476,12 @@ if ($Conf{message}) {
   open (MESSAGE, "<$Conf{message}")
       || die "$me: Could not open $Conf{message}: $!\n";
   my $Message = join ("", <MESSAGE>);
+  &log("Read file $Conf{message}, " . length($Message) . "bytes");
   close MESSAGE;
 
   my ($ResultAction, $NewMessage) = procmail($Message);
-  &log("Result: ". defined $ResultAction ? "'$ResultAction'" : '(undef)' ."\n");
-  &log("Exiting,\n");
+  &log("Result: " . (defined $ResultAction ? "'$ResultAction'" : '(undef)'));
+  &log("Exiting.") if $Conf{verbose};
   exit 0;
 }
 
@@ -562,6 +563,7 @@ while (1) {
 
       &log("Retrieving message $MID") if $Conf{verbose};
       my $Message = $IMAP -> message_string($MID);
+      &log("Retrieved message $MID, " . length($Message) . "bytes");
       my ($ResultAction, $NewMessage) = procmail($Message);
       if (!defined $ResultAction) {
 	$ResultAction = 'keep';
@@ -655,8 +657,7 @@ sub procmail {
   my ($message) = @_;
 
   unless (socketpair (PROCMAIL, PARENT, AF_UNIX, SOCK_STREAM, PF_UNSPEC)) {
-    &log("socketpair failed: $!");
-    return undef;
+    die "$me: socketpair failed: $!";
   }
 
   PROCMAIL->autoflush(1);
@@ -678,13 +679,11 @@ sub procmail {
     close PROCMAIL;
     waitpid($pid, 0);
     ######## FIXME: bail out if procmail died from a signal or returned error
-    &log("procmail's exit status: " . ($? >> 8) . " (signal: " . ($? & 127) . ") ($?)");
+    &log("procmail's exit status: " . ($? >> 8)
+	 . " (signal: " . ($? & 127) . ") ($?)") if $Conf{verbose};
     return ($result || undef, $message);
   } else {
-    unless (defined $pid) {
-      &log("Cannot fork: $!");
-      return undef;
-    }
+    die "$me: cannot fork: $!" unless (defined $pid);
     close PROCMAIL;
     close STDIN;
     close STDOUT;
@@ -694,7 +693,7 @@ sub procmail {
     open (STDERR, ">&LOG")    || die "Could not dup procmail's STDERR: $!\n";
 
     exec ("procmail", "-m", "PROCIMAPRC=$Conf{procmailrc}", $Conf{"wrapper"})
-	|| &log("Exec failed: $!");
+	|| die "$me: exec failed: $!";
 
     return undef;
   }
