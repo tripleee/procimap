@@ -1,4 +1,4 @@
-#! /usr/bin/perl
+#!/usr/bin/perl
 #
 # procimap - era Thu Dec 16 09:45:54 2005
 # Process IMAP folder using Procmail
@@ -7,7 +7,6 @@
 #
 # CVS version information in $CVSid below
 
-######## TODO: implement IMAP copy and delete (== refactor move operation)
 ######## TODO: --dump-config
 ######## TODO: more debugging hooks
 ######## TODO: make GroupAccessOK properly configurable
@@ -21,7 +20,7 @@ use Getopt::Long;
 umask 077;
 
 our $VERSION = 0.01;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.28 2006-01-02 18:20:34 era Exp $';
+our $CVSid = '$Id: procimap,v 1.29 2006-01-02 19:17:06 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
 
@@ -334,34 +333,44 @@ It should contain one of the following values.
 
 =over 4
 
+
 =item B<keep>
 
 Keep the message, i.e. simply leave it in the inbox.
 
-=item B<move> I<foldername>
 
-Move the message to the specified folder.
+=item B<delete>
+
+Delete the message.
+
+Unless you are using the B<expunge> option,
+deleting a message
+merely marks it for deletion on the server.
+
+
+=item B<copy> I<foldername>
+
+Copy the message to the specified folder.
 The folder needs to exist on the server.
 
 You will probably need to find out
 what the server's folder separator is
 and what the folder hierarchy looks like.
 
+
+=item B<move> I<foldername>
+
+Move the message to the specified folder.
+
 The message is deleted from the inbox
 once it is successfully stored in the
 destination folder.
-(IMAP does not have a native move operation,
-so this is implemented as copy + delete.)
 
-=cut
-######## TODO: implement these
-my $XXXXXXXignorepod = <<'=cut';
+IMAP does not have a native move operation,
+so this is implemented as B<copy> plus B<delete>.
+The notes above about these operations
+thus apply to the B<move> operation as well.
 
-#item B<copy> I<foldername>
-
-#item B<delete>
-
-=cut
 
 =back
 
@@ -603,8 +612,9 @@ use Mail::IMAPClient;	   # ... but 2.1.4 has non-numeric version )-:
 my $IMAP = Mail::IMAPClient -> new (Server   => $Conf{server},
                                     User     => $Conf{user},
                                     Password => $Conf{password})
-    or die "$me: Connection to $Conf{user}\@$Conf{server} failed: $@\n";
-######## BUG: doesn't fail if server doesn't have an address (imap.fastmail.fm)
+    or die "$me: Connection to $Conf{user}\@$Conf{server} failed: $@";
+######## BUG: doesn't fail if server doesn't have an address
+# example: imap.messagingengine.com (?)
 $IMAP -> select($Conf{inbox})
     or die "$me: Could not select $Conf{inbox}: ", $IMAP->LastError, "\n";
 $IMAP->Peek(1);
@@ -636,22 +646,28 @@ while (1) {
 	# no action required
 	&log("Keeping message $MID") if $Conf{verbose};
       }
-      elsif ($ResultAction =~ /^move (.*)/) {
-	my $folder = $1;
-	&log("Moving message $MID to $folder") if $Conf{verbose};
+      elsif ($ResultAction =~ /^(move|copy)\s+(.*)/) {
+	my ($action, $folder) = ($1, $2);
+	&log(($action eq 'move' ? "Moving" : "Copying") .
+	     " message $MID to $folder") if $Conf{verbose};
 	# Make copy in new folder; delete original
 	######## TODO: maybe add flags and timestamp of original message
         my $AppendStatus = $IMAP->append_string($folder, $NewMessage);
         if ($AppendStatus) {
-          $IMAP->set_flag("Seen", $MID);
-          $IMAP -> delete_message($MID);
-	  $Expunge = 1 if $Conf{expunge};
+	  $ResultAction = 'delete';
         } else {
           &log("Error moving message $MID");
         }
       }
-      ######## TODO: handle $ResultAction == copy
-      ######## TODO: handle $ResultAction == delete
+
+      # else
+      if ($ResultAction eq 'delete') {
+	&log("Deleting message $MID") if $Conf{verbose};
+	$IMAP->set_flag("Seen", $MID);
+	$IMAP -> delete_message($MID);
+	$Expunge = 1 if $Conf{expunge};
+      }
+
       ######## TODO: warn about unsupported actions
 
       &cleanupchildren;
