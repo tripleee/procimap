@@ -21,7 +21,7 @@ use Getopt::Long;
 umask 077;
 
 our $VERSION = 0.01;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.27 2006-01-02 18:11:47 era Exp $';
+our $CVSid = '$Id: procimap,v 1.28 2006-01-02 18:20:34 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
 
@@ -366,7 +366,8 @@ my $XXXXXXXignorepod = <<'=cut';
 =back
 
 As a fallback mechanism,
-if F<RESULT> is unset when Procmail finishes,
+if F<RESULT> is unset or unintelligible
+when Procmail finishes,
 it is treated as if it were B<keep>.
 
 =cut
@@ -731,17 +732,20 @@ sub procmail {
     print PROCMAIL $message;
     shutdown (PROCMAIL, 1);	# Close for writing; signal eof to reader
     my $resultline = <PROCMAIL>;
-    my $result;
-    if ($resultline =~ /^X-ProcIMAP:\s+(.*)/) {
-      $result = $1;
+    my ($result, $message);
+    if (defined $resultline) {
+      if ($resultline =~ /^X-ProcIMAP:\s+(.*)/) {
+	$result = $1;
+      }
+      # else, $resultline was part of message; glue it back while reading rest
+      $message = join ("", $result ? "" : $resultline, <PROCMAIL>);
     }
-    # else, $resultline was part of message; glue it back while reading rest
-    my $message = join ("", $result ? "" : $resultline, <PROCMAIL>);
     close PROCMAIL;
     waitpid($pid, 0);
     ######## FIXME: bail out if procmail died from a signal or returned error
     &log("procmail's exit status: " . ($? >> 8)
 	 . " (signal: " . ($? & 127) . ") ($?)") if $Conf{verbose};
+    return undef unless (defined $resultline);
     return ($result || undef, $message);
   } else {
     die "$me: cannot fork: $!" unless (defined $pid);
