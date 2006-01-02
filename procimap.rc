@@ -2,16 +2,19 @@
 # - usually to be installed in something like /usr/share/lib/procimap.rc
 #
 # era Wed Dec 21 07:37:03 2005
-# $Id: procimap.rc,v 1.7 2006-01-02 14:46:40 era Exp $
+# $Id: procimap.rc,v 1.8 2006-01-02 14:55:45 era Exp $
 
 SHELL=/bin/sh
 DEFAULT='|'
 LOGABSTRACT=no
 
+TRAP="echo '$_: procmail delivered message prematurely' >&2; exit 2"
 
 RESULT=
 
 INCLUDERC=${PROCIMAPRC:-procimaprc}
+
+TRAP=
 
 :0
 * ! RESULT ?? .
