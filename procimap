@@ -21,7 +21,7 @@ use Getopt::Long;
 umask 077;
 
 our $VERSION = 0.01;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.26 2006-01-02 18:06:03 era Exp $';
+our $CVSid = '$Id: procimap,v 1.27 2006-01-02 18:11:47 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
 
@@ -61,7 +61,7 @@ work quite differently in this setting.
 These issues are described in more detail below in L<|Procmail Recipes>.
 
 
-=head2 Options
+=head1 Options
 
 B<procimap> accepts the following options.
 Each is listed with its short form (when available) first,
@@ -73,7 +73,7 @@ useful for expert use and debugging of B<procimap>'s internals.
 Thus, they are not included in the regular B<--help> output,
 and should probably be ignored by casual readers of this documentation.
 
-=over 5
+=over 4
 
 =item B<-r>|B<--procmailrc> I<file>
 
@@ -293,7 +293,7 @@ Print version number and exit
 =back
 
 
-=head2 Configuration File Directives
+=head1 Configuration File Directives
 
 In addition to the options listed above,
 B<procimap> can read options from a configuration file.
@@ -308,7 +308,7 @@ keyword followed by value, separated by whitespace.
 Leading and trailing whitespace is trimmed.
 
 
-=head2 Procmail Recipes
+=head1 Procmail Recipes
 
 B<procimap> invokes Procmail on each message,
 by default running the Procmail recipes
@@ -323,7 +323,7 @@ as this would cause Procmail to stop processing the message,
 instead of communicating the filtering result
 back to B<procimap>.
 If you wish to deliver the message,
-use the cloning flag B<:c>
+use the cloning flag B<:0c>
 to signal to Procmail to continue processing
 nevertheless.
 
@@ -332,7 +332,7 @@ filtering result back to B<procimap>
 in the F<RESULT> variable.
 It should contain one of the following values.
 
-=over 6
+=over 4
 
 =item B<keep>
 
@@ -781,7 +781,14 @@ The default B<--statedir> directory.
 
 The standard B<--wrapper> file.
 
-=item F<procmail>
+=back
+
+
+=head1 ENVIRONMENT
+
+=over 4
+
+=item B<PATH>
 
 The standard F<PATH> environment variable
 is used to locate the Procmail binary.
