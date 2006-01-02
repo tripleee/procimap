@@ -21,7 +21,7 @@ use Getopt::Long;
 umask 077;
 
 our $VERSION = 0.01;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.24 2006-01-02 06:05:39 era Exp $';
+our $CVSid = '$Id: procimap,v 1.25 2006-01-02 06:06:35 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
 
@@ -476,7 +476,7 @@ if ($Conf{message}) {
   open (MESSAGE, "<$Conf{message}")
       || die "$me: Could not open $Conf{message}: $!\n";
   my $Message = join ("", <MESSAGE>);
-  &log("Read file $Conf{message}, " . length($Message) . "bytes");
+  &log("Read file $Conf{message}, " . length($Message) . " bytes");
   close MESSAGE;
 
   my ($ResultAction, $NewMessage) = procmail($Message);
@@ -563,7 +563,7 @@ while (1) {
 
       &log("Retrieving message $MID") if $Conf{verbose};
       my $Message = $IMAP -> message_string($MID);
-      &log("Retrieved message $MID, " . length($Message) . "bytes");
+      &log("Retrieved message $MID, " . length($Message) . " bytes");
       my ($ResultAction, $NewMessage) = procmail($Message);
       if (!defined $ResultAction) {
 	$ResultAction = 'keep';
