@@ -19,7 +19,7 @@ use Getopt::Long;
 umask 077;
 
 our $VERSION = 0.01;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.30 2006-01-05 23:32:29 era Exp $';
+our $CVSid = '$Id: procimap,v 1.31 2006-01-05 23:36:47 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
 
@@ -489,6 +489,9 @@ $Conf{midfile}  =~ s%^~/%$ENV{HOME}/%;
 $Conf{procmailrc} =~ s%^~/%$ENV{HOME}/%;
 $Conf{wrapper}  =~ s%^~/%$ENV{HOME}/%;
 $Conf{logfile}  =~ s%^~/%$ENV{HOME}/% if defined $Conf{logfile};
+
+# Make sure $Conf{statedir} ends in slash
+$Conf{statedir} =~ s%([^/])$%$1/%;
 
 # procimap.[pm]id: relative paths are relative to $Conf{statedir}
 # except explicit ./filename
