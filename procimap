@@ -9,7 +9,6 @@
 
 ######## TODO: --dump-config
 ######## TODO: more debugging hooks
-######## TODO: make GroupAccessOK properly configurable
 
 use strict;
 use warnings;
@@ -20,21 +19,20 @@ use Getopt::Long;
 umask 077;
 
 our $VERSION = 0.01;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.29 2006-01-02 19:17:06 era Exp $';
+our $CVSid = '$Id: procimap,v 1.30 2006-01-05 23:32:29 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
 
 my %Conf = ();
 
+# These parameters are configured by build.pl at installation time
+
 # Whether group read/write access to configuration file should be tolerated
-######## FIXME: make this an installation-time preference, or something
-my $GroupAccessOK = 0;			######## FIXME: currently hardcoded
+my $GroupAccessOK = 1;		# @@build.pl#s/\s*=\s*\d+/ = $groupaccess/@@
 
-######## FIXME: temporary
-$GroupAccessOK = 1;			######## FIXME: DEBUG
-
-######## FIXME: debugging location; update for production
-$Conf{default_wrapper} = "procimap.rc"; ######## FIXME: DEBUG
+# The location of the default system-wide procimap.rc wrapper script
+$Conf{default_wrapper} =
+    "procimap.rc";			# @@build.pl#s/"[^"]*"/"$wrapper"/@@
 
 
 # Parse options
@@ -793,11 +791,18 @@ The Procmail recipes in this file are run by default.
 
 B<procimap>'s settings are retrieved from this file by default.
 
+This file should never be world wriable or world readable;
+if it is, B<procimap> will abort.
+On many systems, group read/write access will also be disallowed.
+
 =item F<~/.procimap/>
 
 The default B<--statedir> directory.
 
-=item F</usr/lib/procimap.rc>
+=for procimap/build.pl
+# @@build.pl>s/F<.*>/F<$wrapper>/@@
+
+=item F</usr/share/lib/procimap.rc>
 
 The standard B<--wrapper> file.
 
