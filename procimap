@@ -7,6 +7,8 @@
 #
 # CVS version information in $CVSid below
 
+######## TODO: SSL support
+######## TODO: configurable port number for remote end
 ######## TODO: --dump-config
 ######## TODO: more debugging hooks
 
@@ -19,7 +21,7 @@ use Getopt::Long;
 umask 077;
 
 our $VERSION = 0.01;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.31 2006-01-05 23:36:47 era Exp $';
+our $CVSid = '$Id: procimap,v 1.32 2006-01-06 00:17:05 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
 
