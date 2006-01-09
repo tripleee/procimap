@@ -1,0 +1,11 @@
+#!/usr/bin/perl -n
+#
+# pod2example for procimaprc distribution -- era Mon Jan  9 09:36:25 2006
+# $Id: pod2example,v 1.1 2006-01-09 21:14:06 era Exp $
+
+use strict;
+use warnings;
+
+next if (1 .. /^\#\#\#\#\#\#\#\# procimaprc\.example starts here$/);
+next if (/^\#\#\#\#\#\#\#\# procimaprc\.example ends here$/ .. eof);
+print unless (/^=for example/);
