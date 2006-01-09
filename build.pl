@@ -1,8 +1,16 @@
 #!/usr/bin/perl
 #
 # Simple build script for procimap -- era Wed Jan  4 07:47:10 2006
-# $Id: build.pl,v 1.1 2006-01-05 23:31:00 era Exp $
+# $Id: build.pl,v 1.2 2006-01-09 19:47:01 era Exp $
 #
+
+######## TODO: wrapper should be wrapper_prefix -- don't allow to change pr.rc
+######## TODO: FIXME comment about pod2help is not too clear
+######## TODO: in pod, mention that --reverse merely copies the files over
+######## TODO: in pod, mention that world readable is also never OK
+######## TODO: in pod, factor out description of internal variables
+######## TODO: rename package fnord to substitution or something
+######## TODO: remove @args from fnord::get input list
 
 use strict;
 use warnings;
