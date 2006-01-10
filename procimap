@@ -9,6 +9,7 @@
 
 ######## TODO: SSL support
 ######## TODO: configurable port number for remote end
+######## TODO: remove PID file on termination
 ######## TODO: better EXAMPLES section
 ######## TODO: pass IMAP mid to Procmail somehow, too
 ######## TODO: --dump-config
@@ -25,7 +26,7 @@ Getopt::Long::Configure('no_ignore_case');
 umask 077;
 
 our $VERSION = 0.01;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.37 2006-01-09 21:08:48 era Exp $';
+our $CVSid = '$Id: procimap,v 1.38 2006-01-10 20:59:28 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
 
@@ -190,6 +191,22 @@ currently on the server.
 Normally, B<procimap> runs forever,
 reconnecting to the server at intervals specified
 by the I<delay> parameter above.
+
+
+=item B<-n>|B<--no-act>
+
+=for Getopt::Long
+n  no-act !  Do not actually execute any committing actions
+
+With B<--no-act>, B<procimap> will not copy, move, or delete
+any messages on the IMAP server.
+The message-id file will not be updated with a new message-id.
+
+The B<procmail> process for each message
+will be invoked with
+the variable F<PROCIMAP_NO_ACT> set to B<yes>;
+however, the user's B<procimaprc> recipes are responsible for
+interpreting this variable in any meaningful way.
 
 
 =item B<--statedir> I<directory>
@@ -395,6 +412,12 @@ As a fallback mechanism,
 if F<RESULT> is unset or unintelligible
 when Procmail finishes,
 it is treated as if it were B<keep>.
+
+When B<procimap> is being invoked with B<--no-act>,
+the variable F<PROCIMAP_NO_ACT> will be set to B<yes>.
+You should take care to avoid executing any
+delivering actions or other permanent side effects
+when this variable is set.
 
 =cut
 
@@ -667,6 +690,10 @@ while (1) {
 	# no action required
 	&log("Keeping message $MID") if $Conf{verbose};
       }
+      elsif ($Conf{'no-act'}) {
+	&log("Running with --no-act, so keeping anyway") if $Conf{verbose};
+	$ResultAction = 'keep';
+      }
       elsif ($ResultAction =~ /^(move|copy)\s+(.*)/) {
 	my ($action, $folder) = ($1, $2);
 	&log(($action eq 'move' ? "Moving" : "Copying") .
@@ -723,10 +750,17 @@ while (1) {
 
 sub catch_zap { # Orderly shutdown, remove PID file
   unlink $Conf{pidfile};
-  open (MIDFILE,">$Conf{midfile}")
-      or die "Could not open $Conf{midfile} for writing: $!\n";
-  print MIDFILE $LastMID,"\n";
-  close MIDFILE;
+
+  if ($Conf{'no-act'}) {
+    &log("Processed through message $LastMID, but not updating $Conf{midfile}")
+	unless ($LastMID == 0);
+  }
+  else {
+    open (MIDFILE,">$Conf{midfile}")
+	or die "Could not open $Conf{midfile} for writing: $!\n";
+    print MIDFILE $LastMID,"\n";
+    close MIDFILE;
+  }
 
   &log("shutdown");
 
@@ -735,7 +769,7 @@ sub catch_zap { # Orderly shutdown, remove PID file
   exit 0;
 }
 
-sub log  { #print to the log file
+sub log  { # Print to the log file
   my $timestamp = localtime time;
   my $msg = shift;
   print LOG "$timestamp - $msg\n"
@@ -796,8 +830,9 @@ sub procmail {
     open (STDOUT, ">&PARENT") || die "Could not dup procmail's STDOUT: $!\n";
     open (STDERR, ">&LOG")    || die "Could not dup procmail's STDERR: $!\n";
 
-    exec ("procmail", "-m", "PROCIMAPRC=$Conf{procmailrc}", $Conf{"wrapper"})
-	|| die "$me: exec failed: $!";
+    my @args = ("PROCIMAPRC=$Conf{procmailrc}", $Conf{"wrapper"});
+    unshift @args, "PROCIMAP_NO_ACT=yes" if $Conf{'no-act'};
+    exec ("procmail", "-m", @args) || die "$me: exec failed: $!";
 
     return undef;
   }
@@ -812,7 +847,9 @@ Here is a brief example B<procimaprc> file to get you started.
 ######## procimaprc.example starts here
 
   # Local backup copy of all retrieved mail
+  # Don't do this if --no-act is specified, though
   :0c
+  * ! PROCIMAP_NO_ACT ?? ^^yes^^
   ./backup/.
 
 
