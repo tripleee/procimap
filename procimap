@@ -9,7 +9,6 @@
 
 ######## TODO: SSL support
 ######## TODO: configurable port number for remote end
-######## TODO: remove PID file on termination
 ######## TODO: better EXAMPLES section
 ######## TODO: pass IMAP mid to Procmail somehow, too
 ######## TODO: --dump-config
@@ -26,7 +25,7 @@ Getopt::Long::Configure('no_ignore_case');
 umask 077;
 
 our $VERSION = 0.01;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.38 2006-01-10 20:59:28 era Exp $';
+our $CVSid = '$Id: procimap,v 1.39 2006-01-11 17:31:50 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
 
@@ -607,7 +606,7 @@ $SIG{TERM} = $SIG{INT} = \&catch_zap;
 
 # See if PID mentioned in PID file (if any) is still around
 
-if (-e $Conf{pidfile}) {
+if (! $Conf{'single-run'} && ! $Conf{'no-act'} && -e $Conf{pidfile}) {
   open  PIDFILE,"$Conf{pidfile}"
       || die "$me: Could not open $Conf{pidfile}: $!\n";
   my $OldPID = <PIDFILE>;
@@ -639,11 +638,13 @@ my $LastMID = $PrevMID;
 
 # Write new PID file
 
-open (PIDFILE,">$Conf{pidfile}")
-    or die "$me: Could not open $Conf{pidfile} for writing: $!\n";
-print PIDFILE $$,"\n";
-close PIDFILE;
-&log("PID $$ written to $Conf{pidfile}") if $Conf{verbose};
+unless ($Conf{'single-run'} || $Conf{'no-act'}) {
+  open (PIDFILE,">$Conf{pidfile}")
+      or die "$me: Could not open $Conf{pidfile} for writing: $!\n";
+  print PIDFILE $$,"\n";
+  close PIDFILE;
+  &log("PID $$ written to $Conf{pidfile}") if $Conf{verbose};
+}
 
 
 #use Mail::IMAPClient 2.0; # Version >= 2.0 required for $@
@@ -749,13 +750,14 @@ while (1) {
 }
 
 sub catch_zap { # Orderly shutdown, remove PID file
-  unlink $Conf{pidfile};
-
   if ($Conf{'no-act'}) {
     &log("Processed through message $LastMID, but not updating $Conf{midfile}")
 	unless ($LastMID == 0);
   }
   else {
+    &log("Removing $Conf{pidfile}") if $Conf{verbose};
+    unlink $Conf{pidfile} || warn "$me: Could not remove $Conf{pidfile}: $!\n";
+
     open (MIDFILE,">$Conf{midfile}")
 	or die "Could not open $Conf{midfile} for writing: $!\n";
     print MIDFILE $LastMID,"\n";
