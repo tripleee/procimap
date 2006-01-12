@@ -10,7 +10,6 @@
 ######## TODO: SSL support
 ######## TODO: configurable port number for remote end
 ######## TODO: better EXAMPLES section
-######## TODO: pass IMAP mid to Procmail somehow, too
 ######## TODO: --dump-config
 ######## TODO: more debugging hooks
 
@@ -24,8 +23,8 @@ Getopt::Long::Configure('no_ignore_case');
 
 umask 077;
 
-our $VERSION = 0.01;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.39 2006-01-11 17:31:50 era Exp $';
+our $VERSION = 0.02;			######## TODO: update for new version
+our $CVSid = '$Id: procimap,v 1.40 2006-01-12 17:32:02 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
 
@@ -359,6 +358,81 @@ use the cloning flag B<:0c>
 to signal to Procmail to continue processing
 nevertheless.
 
+B<procimap> uses the following Procmail variables
+to communicate with the user's F<procimaprc>.
+
+=over 4
+
+=item B<PROCIMAP_MID>
+
+This variable contains the numeric
+IMAP message-id of the current message.
+
+
+=item B<PROCIMAP_VERBOSE>
+
+When B<procimap> is being invoked with B<--verbose>,
+the variable F<PROCIMAP_VERBOSE> will be set to B<yes>.
+You may want to turn up the logging level in your recipes
+to ease debugging when this is set.
+
+
+=item B<PROCIMAP_NO_ACT>
+
+When B<procimap> is being invoked with B<--no-act>,
+the variable F<PROCIMAP_NO_ACT> will be set to B<yes>.
+You should take care to avoid executing any
+delivering actions or other permanent side effects
+when this variable is set.
+
+
+=item B<NL>
+
+This variable is set to a single newline,
+as is customary in complex Procmail scripts.
+It is used for formatting log messages.
+It shbould probably not be changed.
+
+=item B<PROCIMAP_LOGDATE>
+
+This variable contains a command to execute
+to format a date stamp into log messages.
+It should probably not be changed.
+
+Due to a bug in Procmail,
+the command needs to be executed with
+a semicolon added inside the backticks.
+The log messages from B<procimap> itself
+are produced with the following
+snippet of Procmail logic:
+
+  LOG=${PROCIMAP_VERBOSE=:+\`$PROCIMAP_LOGDATE;`" - $_ [$$] I<message>$NL"}
+
+=item B<PROCIMAP_TRAP_ORIG>
+
+This is the F<TRAP> which was in place when Procimap started.
+This is overridden by the standard F<procimap.rc> wrapper,
+which sets
+
+  TRAP="$PROCIMAP_TRAP; $PROCIMAP_TRAP_ORIG; exit $PROCIMAP_TRAP_EXITCODE"
+
+prior to invoking the user's F<procimaprc> file, and resets it to
+F<PROCIMAP_TRAP_ORIG> afterwards.
+
+=item B<PROCIMAP_TRAP>
+
+This is the trap which takes care of catching premature delivery
+by the user's F<procimaprc>.
+See the previous entry.
+
+=item B<PROCIMAP_TRAP_EXITCODE>
+
+Default exitcode returned on premature delivery.
+See the previous two entries.
+
+=back
+
+
 Your recipe should communicate a
 filtering result back to B<procimap>
 in the F<RESULT> variable.
@@ -411,12 +485,6 @@ As a fallback mechanism,
 if F<RESULT> is unset or unintelligible
 when Procmail finishes,
 it is treated as if it were B<keep>.
-
-When B<procimap> is being invoked with B<--no-act>,
-the variable F<PROCIMAP_NO_ACT> will be set to B<yes>.
-You should take care to avoid executing any
-delivering actions or other permanent side effects
-when this variable is set.
 
 =cut
 
@@ -593,7 +661,7 @@ if ($Conf{message}) {
   &log("Read file $Conf{message}, " . length($Message) . " bytes");
   close MESSAGE;
 
-  my ($ResultAction, $NewMessage) = procmail($Message);
+  my ($ResultAction, $NewMessage) = procmail({ message => \$Message });
   &log("Result: " . (defined $ResultAction ? "'$ResultAction'" : '(undef)'));
   &log("Exiting.") if $Conf{verbose};
   exit 0;
@@ -681,7 +749,8 @@ while (1) {
       &log("Retrieving message $MID") if $Conf{verbose};
       my $Message = $IMAP -> message_string($MID);
       &log("Retrieved message $MID, " . length($Message) . " bytes");
-      my ($ResultAction, $NewMessage) = procmail($Message);
+      my ($ResultAction, $NewMessage) =
+	  procmail({ mid => $MID, message => $Message, });
       if (!defined $ResultAction) {
 	$ResultAction = 'keep';
 	&log("Undefined result from Procmail -> keep") if $Conf{verbose};
@@ -789,9 +858,9 @@ use Socket;
 use IO::Handle;
 
 sub procmail {
-  my ($message) = @_;
+  my ($param) = @_;
 
-  $message =~ s/\r\n/\n/g unless $Conf{keepcrlf};
+  ${$param->{message}} =~ s/\r\n/\n/g unless $Conf{keepcrlf};
 
   unless (socketpair (PROCMAIL, PARENT, AF_UNIX, SOCK_STREAM, PF_UNSPEC)) {
     die "$me: socketpair failed: $!";
@@ -804,7 +873,7 @@ sub procmail {
   if ($pid = fork()) {
     close PARENT;
     &log ("Sending message to procmail PID $pid") if $Conf{verbose};
-    print PROCMAIL $message;
+    print PROCMAIL ${$param->{message}};
     shutdown (PROCMAIL, 1);	# Close for writing; signal eof to reader
     my $resultline = <PROCMAIL>;
     my ($result, $message);
@@ -832,8 +901,11 @@ sub procmail {
     open (STDOUT, ">&PARENT") || die "Could not dup procmail's STDOUT: $!\n";
     open (STDERR, ">&LOG")    || die "Could not dup procmail's STDERR: $!\n";
 
-    my @args = ("PROCIMAPRC=$Conf{procmailrc}", $Conf{"wrapper"});
-    unshift @args, "PROCIMAP_NO_ACT=yes" if $Conf{'no-act'};
+    my @args = ();
+    push @args, "PROCIMAP_MID=$param->{mid}" if defined $param->{mid};
+    push @args, "PROCIMAP_VERBOSE=yes" if $Conf{verbose};
+    push @args, "PROCIMAP_NO_ACT=yes" if $Conf{'no-act'};
+    push @args, ("PROCIMAPRC=$Conf{procmailrc}", $Conf{"wrapper"});
     exec ("procmail", "-m", @args) || die "$me: exec failed: $!";
 
     return undef;
@@ -841,7 +913,7 @@ sub procmail {
 }
 
 
-=head1 EXAMPLES
+=head1 EXAMPLE
 
 Here is a brief example B<procimaprc> file to get you started.
 
@@ -887,6 +959,10 @@ Here is a brief example B<procimaprc> file to get you started.
     :0a
     * ^X-Spam-Status: Yes
     { RESULT=delete }
+
+    :0e
+    * PROCIMAP_VERBOSE ?? yes
+    { LOG=`$PROCIMAP_LOGDATE;`" - $_ [$$] - message too large$NL" }
   }
 
 
