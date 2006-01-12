@@ -2,7 +2,7 @@
 # - usually to be installed in something like /usr/share/lib/procimap.rc
 #
 # era Wed Dec 21 07:37:03 2005
-# $Id: procimap.rc,v 1.9 2006-01-12 17:32:02 era Exp $
+# $Id: procimap.rc,v 1.10 2006-01-12 17:53:18 era Exp $
 
 SHELL=/bin/sh
 DEFAULT='|'
@@ -12,9 +12,11 @@ NL="
 "
 
 PROCIMAP_TRAP_ORIG=$TRAP
-PROCIMAP_TRAP='echo "$_: procmail delivered message prematurely" >&2'
+PROCIMAP_TRAP="echo '$_: procmail delivered message prematurely' >&2"
+######## BUG: exit code from TRAP appears to have no effect, in spite of docs
+######## TODO: submit bug report for procmail
 PROCIMAP_TRAP_EXITCODE=2
-TRAP="$PROCIMAP_TRAP; $PROCIMAP_TRAP_ORIG; exit $PROCIMAP_TRAP_EXITCODE"
+TRAP="$PROCIMAP_TRAP;${PROCIMAP_TRAP_ORIG:-:};EXITCODE=$PROCIMAP_TRAP_EXITCODE"
 
 # Gack, simulate output from Perl's localtime -- %c without a time zone
 ######## BUG: no SHELLMETAS check on $var in backticks `$var`
@@ -24,7 +26,7 @@ PROCIMAP_LOGDATE='eval date +"%a %b %_d %T %Y"'
 LOG=${PROCIMAP_VERBOSE:+${PROCIMAP_MID:+\
 `$PROCIMAP_LOGDATE;`" - $_ [$$] processing message $PROCIMAP_MID$NL"}}
 
-RESULT=
+RESULT= EXITCODE=
 
 LOG=${PROCIMAP_VERBOSE:+\
 `$PROCIMAP_LOGDATE;`" - $_ [$$] invoking ${PROCIMAPRC-procimaprc}$NL"}
