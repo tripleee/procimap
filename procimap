@@ -24,7 +24,7 @@ Getopt::Long::Configure('no_ignore_case');
 umask 077;
 
 our $VERSION = 0.02;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.40 2006-01-12 17:32:02 era Exp $';
+our $CVSid = '$Id: procimap,v 1.41 2006-01-13 10:52:02 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
 
@@ -750,7 +750,7 @@ while (1) {
       my $Message = $IMAP -> message_string($MID);
       &log("Retrieved message $MID, " . length($Message) . " bytes");
       my ($ResultAction, $NewMessage) =
-	  procmail({ mid => $MID, message => $Message, });
+	  procmail({ mid => $MID, message => \$Message, });
       if (!defined $ResultAction) {
 	$ResultAction = 'keep';
 	&log("Undefined result from Procmail -> keep") if $Conf{verbose};
