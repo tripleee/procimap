@@ -24,7 +24,7 @@ Getopt::Long::Configure('no_ignore_case');
 umask 077;
 
 our $VERSION = 0.02;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.41 2006-01-13 10:52:02 era Exp $';
+our $CVSid = '$Id: procimap,v 1.42 2006-01-16 12:34:00 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
 
@@ -711,7 +711,7 @@ unless ($Conf{'single-run'} || $Conf{'no-act'}) {
       or die "$me: Could not open $Conf{pidfile} for writing: $!\n";
   print PIDFILE $$,"\n";
   close PIDFILE;
-  &log("PID $$ written to $Conf{pidfile}") if $Conf{verbose};
+  &log("PID $$ written to $Conf{pidfile}") if $Conf{verbose};
 }
 
 
@@ -944,7 +944,7 @@ Here is a brief example B<procimaprc> file to get you started.
   # Else, move bounce messages etc to a separate folder
   :0E
   * ^FROM_DAEMON
-  { RESULT="move INBOX.daemon" }
+  { RESULT="move INBOX.daemon" }
 
 
   # Else, scan for spam using SpamAssassin
