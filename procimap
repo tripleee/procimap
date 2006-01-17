@@ -7,7 +7,6 @@
 #
 # CVS version information in $CVSid below
 
-######## TODO: SSL support
 ######## TODO: configurable port number for remote end
 ######## TODO: better EXAMPLES section
 ######## TODO: --dump-config
@@ -23,8 +22,8 @@ Getopt::Long::Configure('no_ignore_case');
 
 umask 077;
 
-our $VERSION = 0.02;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.42 2006-01-16 12:34:00 era Exp $';
+our $VERSION = 0.03;			######## TODO: update for new version
+our $CVSid = '$Id: procimap,v 1.43 2006-01-17 15:12:31 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
 
@@ -152,6 +151,26 @@ at the end of the session.
 
 Use this option with caution;
 expunged messages cannot be recovered.
+
+
+=item B<-S>|B<--ssl>
+
+=for Getopt::Long
+S  ssl  !  Use IMAP over SSL (imaps) instead of insecure IMAP
+
+B<procimap> normally connects to the standard IMAP port (143)
+using an unencrypted connection.
+If your L<Mail::IMAPClient> and the remote server support it,
+using secure IMAP over an encrypted SSL channel on port 993
+is I<strongly> recommended, though.
+
+B<NOTE:>
+Unencrypted protocols should in general be avoided
+whenever there is a password involved --
+otherwise, anybody with a packet sniffer
+can get your password, and from there,
+they are in a much better position
+to steal the passwords of others.
 
 
 =item B<-d>|B<--delay> I<n>
@@ -632,7 +651,7 @@ autoflush LOG 1;
 if ($Conf{verbose}) {
   for my $param (qw(config procmailrc server user inbox
 		statedir logfile pidfile midfile delay maxdelay keepcrlf
-		expunge single-run message wrapper)) {  # password
+		ssl expunge single-run message wrapper)) {  # password
     my $logval = defined $Conf{"$param"} ? "'$Conf{$param}'" : '(undef)';
     &log("\$Conf{$param} is $logval");
   }
@@ -724,6 +743,7 @@ use Mail::IMAPClient;	   # ... but 2.1.4 has non-numeric version )-:
 
 my $IMAP = Mail::IMAPClient -> new (Server   => $Conf{server},
                                     User     => $Conf{user},
+				    Ssl      => $Conf{ssl},
                                     Password => $Conf{password})
     or die "$me: Connection to $Conf{user}\@$Conf{server} failed: $@";
 ######## BUG: doesn't fail if server doesn't have an address
@@ -985,6 +1005,9 @@ See L<http://www.procimap.org/fanclub/top100/> for more examples.
 
 Requires a configuration file to be present
 even when all required parameters are passed in as command-line options.
+
+Using SSL should be required for security reasons.
+Or perhaps, at least, it should be the default.
 
 
 =head1 FILES
