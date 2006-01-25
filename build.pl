@@ -1,16 +1,14 @@
 #!/usr/bin/perl
 #
 # Simple build script for procimap -- era Wed Jan  4 07:47:10 2006
-# $Id: build.pl,v 1.2 2006-01-09 19:47:01 era Exp $
+# $Id: build.pl,v 1.3 2006-01-25 19:03:37 era Exp $
 #
 
 ######## TODO: wrapper should be wrapper_prefix -- don't allow to change pr.rc
 ######## TODO: FIXME comment about pod2help is not too clear
-######## TODO: in pod, mention that --reverse merely copies the files over
 ######## TODO: in pod, mention that world readable is also never OK
 ######## TODO: in pod, factor out description of internal variables
 ######## TODO: rename package fnord to substitution or something
-######## TODO: remove @args from fnord::get input list
 
 use strict;
 use warnings;
@@ -26,7 +24,7 @@ my %Conf = (
     groupaccess => 0,		   	# group readable/writable files OK?
     install_prefix => "/",		# root dir for install
     basedir => "usr/local",		# or maybe "opt" or just "usr"
-    wrapper => "share/lib/procimap/procimap.rc"
+    wrapper => "share/lib/procimap.rc"
 );
 
 # Parse options
@@ -47,7 +45,7 @@ B<build.pl> I<options ...>
 
 =head1 DESCRIPTION
 
-B<build.pL> builds B<procimap> and B<Makefile.conf>
+B<build.pl> builds B<procimap> and B<Makefile.conf>
 for your local installation, supplying default parameter values
 for those you do not supply yourself.
 
@@ -75,8 +73,11 @@ B<build.pl> accepts the following options.
 =for Getopt::Long
 r reverse ! Run in reverse: generate *.in files from current target files
 
-Run in revese; generate F<*.in> files from the corresponding
+Run in reverse; generate F<*.in> files from the corresponding
 non-F<.in> files.
+
+Currently, the files F<procimap> and F<Makefile.conf> are simply
+copied over.
 
 
 =item B<--groupaccess> I<n>
@@ -320,7 +321,7 @@ sub substitute
 
 sub get
 {
-    my ($self, $attribute, @args) = @_;
+    my ($self, $attribute) = @_;
     my $value = $self->{$attribute};
     unless (defined $value)
     {
@@ -363,8 +364,7 @@ my $fnord = fnord->new(%Conf);
 for my $file (@files)
 {
     open (IN, "<$file.in") || die "$me: Could not open $file.in: $!\n";
-    ######## FIXME: remove .nst when this seems to work
-    open (OUT, ">$file.nst") || die "$me: Could not open $file: $!\n";
+    open (OUT, ">$file") || die "$me: Could not open $file: $!\n";
     my %subst;
     my $where = "$me: (nowhere yet)";
     while (<IN>)
@@ -398,8 +398,7 @@ for my $file (@files)
 		unless ($newline)
 		{
 		    close OUT;
-		    ######## FIXME: remove .nst
-		    #unlink "$file.nst";
+		    unlink "$file";
 		    die "$where: Did not match '$from' -- aborting: $line\n";
 		}
 		# else
