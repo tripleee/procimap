@@ -1,0 +1,16 @@
+Source: procimap
+Section: mail
+Priority: optional
+Maintainer: era eriksson <era+debian@iki.fi>
+Build-Depends: debhelper (>> 3.0.0)
+Standards-Version: 3.5.2
+
+Package: procimap
+Priority: optional
+Architecture: all
+Depends: libmail-imapclient-perl
+Recommends: libmail-imapclient-perl (>>= 2.2.9+deb-3)
+Maintainer: era eriksson <era+debian@iki.fi>
+Description: Run Procmail on an IMAP mailbox
+ Procimap allows you to run local Procmail rules on a remote IMAP mailbox,
+ with facilities for moving, copying, and deleting messages on the IMAP server.

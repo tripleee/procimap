@@ -1,0 +1,5 @@
+procimap (0.03) unstable; urgency=low
+
+  * Initial debianization
+
+ -- era eriksson <era+debian@iki.fi>  Wed, 25 Jan 2006 09:35:04 +0200
