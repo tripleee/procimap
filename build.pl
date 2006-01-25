@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 #
 # Simple build script for procimap -- era Wed Jan  4 07:47:10 2006
-# $Id: build.pl,v 1.3 2006-01-25 19:03:37 era Exp $
+# $Id: build.pl,v 1.4 2006-01-25 19:09:08 era Exp $
 #
 
 ######## TODO: wrapper should be wrapper_prefix -- don't allow to change pr.rc
@@ -117,10 +117,6 @@ and should probably not be changed
 unless you use some build management
 or package management system which
 benefits from installing into a chroot.
-
-Building Debian packages comes to mind
-as an example of when you might want this,
-in which case you'd set it to F<debian/procimap>.
 
 
 =item B<--basedir> I<directory>
