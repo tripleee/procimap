@@ -1,5 +1,5 @@
 # Makefile for procimap -- era Tue Jan 10 16:48:13 2006
-# $Id: GNUmakefile,v 1.1 2006-01-25 19:37:27 era Exp $
+# $Id: GNUmakefile,v 1.2 2006-01-25 19:49:20 era Exp $
 #
 # Depends:
 #  GNU make
@@ -8,7 +8,7 @@
 all: build
 
 
-ifeq '$(shell ls Makefile.conf 2>/dev/null)' ''
+ifneq '$(shell ls Makefile.conf 2>/dev/null)' ''
 include Makefile.conf
 endif
 
@@ -37,6 +37,7 @@ procimaprc.ex: procimap
 
 .PHONY: install
 install: procimap procimap.1 procimap.rc
+	test -r Makefile.conf
 	install procimap    $(DESTDIR.BIN)
 	install procimap.1  $(DESTDIR.MAN1)
 	install procimap.rc $(DESTDIR.LIB)
