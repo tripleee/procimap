@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 #
 # Simple build script for procimap -- era Wed Jan  4 07:47:10 2006
-# $Id: build.pl,v 1.4 2006-01-25 19:09:08 era Exp $
+# $Id: build.pl,v 1.5 2006-01-25 19:33:06 era Exp $
 #
 
 ######## TODO: wrapper should be wrapper_prefix -- don't allow to change pr.rc
@@ -24,7 +24,8 @@ my %Conf = (
     groupaccess => 0,		   	# group readable/writable files OK?
     install_prefix => "/",		# root dir for install
     basedir => "usr/local",		# or maybe "opt" or just "usr"
-    wrapper => "share/lib/procimap.rc"
+    share => "/share",
+    wrapper => "lib/procimap.rc",
 );
 
 # Parse options
@@ -129,16 +130,26 @@ Base directory for installation, relative to the B<install-root>.
 The default is F<usr/local>; just F<usr> or F<opt> are common as well.
 
 
+=item B<--share> I<directory>
+
+=for Getopt::Long
+- share =s Share path, usually either empty string or "/share"
+
+Share directory, usually either empty string or F</share> (the default).
+
+The internal variable C<$share> expands to the full path,
+i.e. the catenation of B<root>, B<basedir>, and B<share>.
+
+
 =item B<--wrapper> I<pathname>
 
 =for Getopt::Long
 - wrapper =s Relative file name for system-wide procimap.rc wrapper
 
 File name to use for installing the system-wide F<procimap.rc> wrapper.
-This is relateive to the B<basedir>.
+This is relateive to the B<basedir> and B<share>.
 
-The default is F<share/lib/procimap.rc>.
-On some systems, you may want to omit the F<share/> prefix.
+The default is F<lib/procimap.rc>.
 
 This corresponds to the B<build.pl> internal variable C<$wrapper>;
 however, the variable will contain a full path name
@@ -324,7 +335,7 @@ sub get
 	my $method = $self->can($attribute);
 	if ($method)
 	{
-	    $value = $method->($self, @args);
+	    $value = $method->($self);
 	}
 	else
 	{
@@ -340,7 +351,8 @@ sub get
 sub wrapper
 {
     my ($self) = @_;
-    my $path = $self->get('root') . $self->get('basedir');
+    my $path = join ("", $self->get('root'), $self->get('basedir'),
+		$self->get('share'));
     my $value = $self->{_data}->{'wrapper'};
     return join ("/", $path, $value);
 }
