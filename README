@@ -1,0 +1,22 @@
+README for procimap
+-------------------
+$Id: README,v 1.1 2006-01-25 18:52:07 era Exp $
+
+procimap allows you to run Procmail on a remote IMAP mailbox. While
+Procmail in this context is as powerful and flexible as ever, there
+are some obvious limitations to what you can (or will want to) do; but
+the regular IMAP move, delete, and copy operations are available.
+
+This package started out as a fork of <http://imapassassin.sf.net/>
+and still contains some code parts inherited from that project. Thus,
+the code as a whole is GPL, although the parts by yours truly are
+dual-licensed GPL/BSD "new style".
+
+(Incidentally, running SpamAssassin from Procimap is one of the
+reasons I wanted this -- for one thing, SpamAssassin rule updates etc.
+can be handled without a need for restarting procimap, and also,
+obvious optimizations are possible by running spamd/spamc instead of
+just the regular SpamAssassin.)
+
+
+era eriksson <era+debian@iki.fi>, Wed, 25 Jan 2006 09:35:04 +0200
