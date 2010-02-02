@@ -23,8 +23,8 @@ Getopt::Long::Configure('no_ignore_case');
 
 umask 077;
 
-our $VERSION = 0.04;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.46 2007-05-10 12:38:53 era Exp $';
+our $VERSION = 0.05;			######## TODO: update for new version
+our $CVSid = '$Id: procimap,v 1.47 2010-02-02 09:10:49 era Exp $';
 our $me = $0;
 $me =~ s,.*/,,;
 
@@ -717,11 +717,17 @@ if (! $Conf{'single-run'} && ! $Conf{'no-act'} && -e $Conf{pidfile}) {
   open  PIDFILE,"$Conf{pidfile}"
       || die "$me: Could not open $Conf{pidfile}: $!\n";
   my $OldPID = <PIDFILE>;
-  chomp $OldPID;
+  if ($OldPID) {
+      chomp $OldPID;
+      &log("Read $Conf{pidfile}") if $Conf{verbose};
+  } else { 
+      &log("Empty PID from $Conf{pidfile} -- ignoring");
+      $OldPID = -1;
+  }
   close PIDFILE;
-  &log("Read $Conf{pidfile}") if $Conf{verbose};
 
-  my $Group = getpgrp $OldPID;
+
+  my $Group = getpgrp $OldPID;	# getgrp -1 returns empty string which is == 0
   if ($Group > 0) {
     &log("Process $OldPID still there -- not starting new instance");
     exit 1;
@@ -735,9 +741,15 @@ if (-e $Conf{midfile}) {
   open  MIDFILE,"$Conf{midfile}"
       || die "$me: Could not open $Conf{midfile}: $!\n";
   $PrevMID = <MIDFILE>;
-  chomp $PrevMID;
+  if ($PrevMID) {
+      chomp $PrevMID;
+      &log("Read $Conf{midfile}") if $Conf{verbose};
+  } else {
+      &log("Empty MID from $Conf{midfile} -- ignoring");
+      $PrevMID = 0;
+  }
   close MIDFILE;
-  &log("Read $Conf{midfile}") if $Conf{verbose};
+
 }
 my $LastMID = $PrevMID;
 &log("Starting from MID $LastMID") if $Conf{verbose};
@@ -748,8 +760,10 @@ my $LastMID = $PrevMID;
 unless ($Conf{'single-run'} || $Conf{'no-act'}) {
   open (PIDFILE,">$Conf{pidfile}")
       or die "$me: Could not open $Conf{pidfile} for writing: $!\n";
-  print PIDFILE $$,"\n";
-  close PIDFILE;
+  print PIDFILE $$,"\n"
+      or die "$me: Could not write $Conf{pidfile} -- aborting";
+  close PIDFILE
+      or die "$me: Could not write $Conf{pidfile} -- aborting";
   &log("PID $$ written to $Conf{pidfile}") if $Conf{verbose};
 }
 
