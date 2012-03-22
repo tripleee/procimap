@@ -154,6 +154,23 @@ Use this option with caution;
 expunged messages cannot be recovered.
 
 
+=item B<--ignoresizeerr>
+
+=for Getopt::Long
+- ignoresizeerr !  Ignore size errors from server (Gmail)
+
+This instructs the L<Mail::IMAPClient> instance to
+ignore mismatches in message size.
+The server tells you how many bytes you should have received,
+and if the number doesn't match what you actually received,
+the client will think there was an error.
+
+B<NOTE:>
+This seems to be happening a lot for Gmail users.
+If your inbox is on Gmail and you keep getting
+"Failed to fetch message ..." errors, try enabling this option.
+
+
 =item B<-S>|B<--ssl>
 
 =for Getopt::Long
@@ -664,7 +681,7 @@ autoflush LOG 1;
 if ($Conf{verbose}) {
   for my $param (qw(config procmailrc server user inbox
 		statedir logfile pidfile midfile delay maxdelay keepcrlf
-		ssl expunge single-run message wrapper)) {  # password
+		ssl expunge ignoresizeerr single-run message wrapper)) {
     my $logval = defined $Conf{"$param"} ? "'$Conf{$param}'" : '(undef)';
     &log("\$Conf{$param} is $logval");
   }
@@ -778,7 +795,8 @@ use Mail::IMAPClient;	   # ... but 2.1.4 has non-numeric version )-:
 my $IMAP = Mail::IMAPClient -> new (Server   => $Conf{server},
                                     Ssl      => $Conf{ssl},
                                     User     => $Conf{user},
-                                    Password => $Conf{password})
+                                    Password => $Conf{password},
+				    IgnoreSizeErrors => $Conf{ignoresizeerr})
     or die "$me: Connection to $Conf{user}\@$Conf{server} failed: $@";
 ######## BUG: doesn't fail if server doesn't have an address
 # example: imap.messagingengine.com (?)
