@@ -1,3 +1,10 @@
+procimap (0.06) unstable; urgency=low
+
+  * New release 0.06
+    - Add --ignoresizeerr option for Gmail
+
+ -- era eriksson <era+debian@iki.fi>  Thu, 22 Mar 2012 15:41:25 +0200
+
 procimap (0.05-cvs20100202) unstable; urgency=low
 
   * Building 0.05 from CVS source

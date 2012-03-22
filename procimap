@@ -4,8 +4,7 @@
 # Process IMAP folder using Procmail
 #
 # Based on http://imapassassin.sourceforge.net/ -- forked && hacked extensively
-#
-# CVS version information in $CVSid below
+
 
 ######## TODO: --single-run for a single given --mid
 ######## TODO: configurable port number for remote end
@@ -23,8 +22,7 @@ Getopt::Long::Configure('no_ignore_case');
 
 umask 077;
 
-our $VERSION = 0.05;			######## TODO: update for new version
-our $CVSid = '$Id: procimap,v 1.47 2010-02-02 09:10:49 era Exp $';
+our $VERSION = 0.06;			######## TODO: update for new version
 our $me = $0;
 $me =~ s,.*/,,;
 
@@ -587,7 +585,7 @@ ________HERE
   }
 
   if ($Conf{version}) {
-    print "$me $VERSION ($CVSid)\n";
+    print "$me $VERSION\n";
     exit 0;
   }
 }
