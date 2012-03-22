@@ -1,3 +1,16 @@
+procimap (0.05-cvs20100202) unstable; urgency=low
+
+  * Building 0.05 from CVS source
+    - Handle short writes to procimap.[pm]id
+    - Don't wait for children (!?)
+
+  * Includes changes from 0.04 (aka 0.042 [sic]!?)
+    - Gracefully handle case where a message cannot be retrieved
+    - Increased verbosity
+    - Better document the relationship between --delay and --maxdelay
+
+ -- era eriksson <era+debian@iki.fi>  Thu, 22 Mar 2012 10:25:14 +0200
+
 procimap (0.03) unstable; urgency=low
 
   * Initial debianization

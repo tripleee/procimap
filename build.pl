@@ -257,7 +257,8 @@ or just weird behavior.
      ~            ^<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 ________HERE
 	 ($short ? "-$short|" : "   "), $long, $desc, $desc, $desc;
-      push @options, "$long|$short$type";
+      my $shortspec = $short ? "|$short" : "";
+      push @options, "$long$shortspec$type";
     }
     else {
       die "$me: Internal error: $1\n";

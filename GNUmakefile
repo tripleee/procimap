@@ -14,7 +14,9 @@ endif
 
 
 .PHONY: build
-build: procimap procimap.1 procimaprc.ex
+build: procimap.in Makefile.conf.in
+	$(MAKE) -$(MAKEFLAGS) procimap procimap.1 procimaprc.ex
+
 
 procimap Makefile.conf: procimap.in Makefile.conf.in
 	./build.pl
@@ -35,12 +37,15 @@ procimaprc.ex: procimap
 
 
 
+procimap.in Makefile.conf.in:  #procimap Makefile.conf
+	./build.pl --reverse
+
 .PHONY: install
 install: procimap procimap.1 procimap.rc
 	test -r Makefile.conf
 	install procimap    $(DESTDIR.BIN)
 	install procimap.1  $(DESTDIR.MAN1)
-	install procimap.rc $(DESTDIR.LIB)
+	install procimap.rc $(DEST.WRAPPER)
 
 ######## TODO: uninstall
 
