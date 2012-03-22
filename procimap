@@ -169,6 +169,14 @@ If your inbox is on Gmail and you keep getting
 "Failed to fetch message ..." errors, try enabling this option.
 
 
+=item B<--debugimapclient>
+
+=for Getopt::Long
+* debugimapclient !  Enable $Mail::IMAPClient->Debug(1)
+
+Enable the Debug setting for F<Mail::IMAPClient>.
+
+
 =item B<-S>|B<--ssl>
 
 =for Getopt::Long
@@ -796,6 +804,7 @@ my $IMAP = Mail::IMAPClient -> new (Server   => $Conf{server},
                                     Password => $Conf{password},
 				    IgnoreSizeErrors => $Conf{ignoresizeerr})
     or die "$me: Connection to $Conf{user}\@$Conf{server} failed: $@";
+$IMAP->Debug($Conf{debugimapclient});
 ######## BUG: doesn't fail if server doesn't have an address
 # example: imap.messagingengine.com (?)
 $IMAP -> select($Conf{inbox})
