@@ -117,7 +117,7 @@ values of the options you pass to your programs
 in a simple L<ps(1)> listing.
 
 
-=item B<-i>|B<--inbox>
+=item B<-i>|B<--inbox> I<name>
 
 =for Getopt::Long
 i  inbox =s  Name of inbox folder on server
