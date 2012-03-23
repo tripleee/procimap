@@ -9,10 +9,11 @@
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
-%:
-	dh  $@
-
-override_dh_auto_configure:
+.PHONY: build
+build:
 	# in directory ..
 	-./build.pl --reverse
 	./build.pl --basedir=usr --wrapper=procimap/procimap.rc
+
+%:
+	dh  $@
