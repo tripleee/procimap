@@ -1,3 +1,19 @@
+procimap (0.07) unstable; urgency=low
+
+  * New release 0.07
+    - Add --port option (default 143, or 993 for SSL)
+    - Add --debugimaplicent for invoking Mail::IMAPClient->Debug(1)
+    - debian/control updated
+      - Recommends: libmail-imapclient-perl >= 3.20-2
+        (see <http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=543774>)
+      - Build-Depends: debhelper >> 7.0.0
+    - debian/copyright updated
+      - Old address for the FSF (lintian error)
+      - Copyright years updated
+    - Minor cleanups related to migration to Git
+
+ -- era eriksson <era+debian@iki.fi>  Fri, 23 Mar 2012 13:01:05 +0200
+
 procimap (0.06) unstable; urgency=low
 
   * New release 0.06
