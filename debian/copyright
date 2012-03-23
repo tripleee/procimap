@@ -2,7 +2,7 @@ This is procimap, written and maintained by era eriksson <era+debian@iki.fi>
 
 This file was created on Wed, 25 Jan 2006 09:35:04 +0200.
 
-Copyright (C) 2005-2006  era eriksson
+Copyright (C) 2005-2006,2010,2012  era eriksson
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -16,8 +16,8 @@ Copyright (C) 2005-2006  era eriksson
 
   You should have received a copy of the GNU General Public License with
   the Debian GNU/Linux distribution in file /usr/share/common-licenses/GPL;
-  if not, write to the Free Software Foundation, Inc., 59 Temple Place,
-  Suite 330, Boston, MA  02111-1307  USA
+  if not, write to the Free Software Foundation, Inc.,  51 Franklin Street,
+  Fifth Floor, Boston, MA  02110-1301  USA
 
 The program is derived from http://imapassassin.sf.net which is GPL.
 The author makes his additions available under a dual GPL/BSD "new style"
