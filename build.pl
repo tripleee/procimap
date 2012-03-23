@@ -1,7 +1,6 @@
 #!/usr/bin/perl
 #
 # Simple build script for procimap -- era Wed Jan  4 07:47:10 2006
-# $Id: build.pl,v 1.5 2006-01-25 19:33:06 era Exp $
 #
 
 ######## TODO: wrapper should be wrapper_prefix -- don't allow to change pr.rc

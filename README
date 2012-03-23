@@ -1,6 +1,5 @@
 README for procimap
 -------------------
-$Id: README,v 1.1 2006-01-25 18:52:07 era Exp $
 
 procimap allows you to run Procmail on a remote IMAP mailbox. While
 Procmail in this context is as powerful and flexible as ever, there

@@ -1,5 +1,4 @@
 # Makefile for procimap -- era Tue Jan 10 16:48:13 2006
-# $Id: GNUmakefile,v 1.2 2006-01-25 19:49:20 era Exp $
 #
 # Depends:
 #  GNU make

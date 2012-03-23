@@ -2,7 +2,6 @@
 # - usually to be installed in something like /usr/share/lib/procimap.rc
 #
 # era Wed Dec 21 07:37:03 2005
-# $Id: procimap.rc,v 1.10 2006-01-12 17:53:18 era Exp $
 
 SHELL=/bin/sh
 DEFAULT='|'
