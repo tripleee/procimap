@@ -7,7 +7,6 @@
 
 
 ######## TODO: --single-run for a single given --mid
-######## TODO: configurable port number for remote end
 ######## TODO: better EXAMPLES section
 ######## TODO: --dump-config
 ######## TODO: more debugging hooks
@@ -90,6 +89,18 @@ Use this option to invoke a different Procmail recipe file.
 s server =s Specify which IMAP server to connect to
 
 Connect to the IMAP server I<servername>.
+
+
+=item B<--port> I<number>
+
+=for Getopt::Long
+- port =i Port number on server to connect to
+
+Connect to the specified port number.
+
+You do not need to specify the port number if you use
+the standard port number 143 for insecure IMAP, or
+993 for secure IMAP (selected by using the B<--ssl> option).
 
 
 =item B<-u>|B<--user> I<username>
@@ -669,6 +680,8 @@ $Conf{inbox} ||= "INBOX";
 $Conf{delay} ||= 60;
 $Conf{maxdelay} ||= 600;
 
+$Conf{port} ||= $Conf{ssl} ? 993 : 143;
+
 die "$me: No server defined\n" unless $Conf{server};
 die "$me: No user name defined\n" unless $Conf{user};
 die "$me: No password defined\n" unless $Conf{password};
@@ -799,6 +812,7 @@ use Mail::IMAPClient;	   # ... but 2.1.4 has non-numeric version )-:
 &log("Connecting to $Conf{server} as $Conf{user} ...") if $Conf{verbose};
 
 my $IMAP = Mail::IMAPClient -> new (Server   => $Conf{server},
+				    Port     => $Conf{port},
                                     Ssl      => $Conf{ssl},
                                     User     => $Conf{user},
                                     Password => $Conf{password},
