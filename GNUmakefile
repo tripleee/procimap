@@ -57,7 +57,10 @@ clean:
 .PHONY: realclean
 realclean: clean
 	./build.pl --reverse
-	$(RM) procimap Makefile.conf
+	$(RM) procimap Makefile.conf \
+		debian/files \
+		debian/procimap.debhelper.log debian/procimap.substvars
+	$(RM) -r debian/procimap
 .PHONY: distclean
 distclean: realclean
 	$(RM) procimap-*.tar.gz
