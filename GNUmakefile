@@ -49,6 +49,13 @@ install: procimap procimap.1 procimap.rc
 ######## TODO: uninstall
 
 
+.PHONY: deb
+deb:
+	debuild -us -uc -b
+	v=$$(sed '2q;s/^procimap (//;s/).*//' debian/changelog) \
+	; mv ../procimap_$${v}_all.deb ../procimap_$${v}_*.changes \
+		../procimap_$${v}_*.build .
+
 
 .PHONY: clean
 clean:
