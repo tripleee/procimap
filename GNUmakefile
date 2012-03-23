@@ -56,6 +56,7 @@ clean:
 	$(RM) procimap.1 procimaprc.ex
 .PHONY: realclean
 realclean: clean
+	-git checkout procimap Makefile.conf
 	./build.pl --reverse
 	$(RM) procimap Makefile.conf \
 		debian/files \
