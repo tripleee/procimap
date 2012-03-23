@@ -615,6 +615,7 @@ ________HERE
 $Conf{statedir_default} = "$ENV{HOME}/.procimap";
 $Conf{config} ||= "$Conf{statedir_default}/procimap.conf";
 
+if (-e $Conf{config})
 {
   ######## FIXME: this is awfully U*x-centric; "use filetest" instead?
   my ($readablemask, $writablemask) =
@@ -627,25 +628,25 @@ $Conf{config} ||= "$Conf{statedir_default}/procimap.conf";
       if ($stat[2] & $readablemask);
   die "$me: configuration file $Conf{config} is group/world writable\n"
       if ($stat[2] & $writablemask);
-}
 
 
-open CONF,$Conf{config}
-    || die "$me: Could not open $Conf{config}: $!\n";
-######## FIXME: cannot &log here because LOG isn't opened yet
-warn "Reading $Conf{config}" if $Conf{verbose};
-while (my $line = <CONF>)
-{
-  next if ($line =~ /^\s*(?:$|\#)/);
-  unless ($line =~ m/^(\S+)\s+(\S.*?)\s*$/)
+  open CONF,$Conf{config}
+      || die "$me: Could not open $Conf{config}: $!\n";
+  ######## FIXME: cannot &log here because LOG isn't opened yet
+  warn "Reading $Conf{config}" if $Conf{verbose};
+  while (my $line = <CONF>)
   {
-    die "$me: $Conf{config}:$.: Invalid directive $_";
+    next if ($line =~ /^\s*(?:$|\#)/);
+    unless ($line =~ m/^(\S+)\s+(\S.*?)\s*$/)
+    {
+      die "$me: $Conf{config}:$.: Invalid directive $_";
+    }
+    ######## TODO: warnings for unsupported directives
+    my ($key,$value) = (lc($1), $2);
+    $Conf{"$key"} = $value unless defined $Conf{"$key"};
   }
-  ######## TODO: warnings for unsupported directives
-  my ($key,$value) = (lc($1), $2);
-  $Conf{"$key"} = $value unless defined $Conf{"$key"};
+  close CONF;
 }
-close CONF;
 
 
 # Default parameters and file locations
