@@ -1,5 +1,7 @@
 README for procimap
--------------------
+===================
+
+http://github.com/tripleee/procimap
 
 procimap allows you to run Procmail on a remote IMAP mailbox. While
 Procmail in this context is as powerful and flexible as ever, there
@@ -11,11 +13,70 @@ and still contains some code parts inherited from that project. Thus,
 the code as a whole is GPL, although the parts by yours truly are
 dual-licensed GPL/BSD "new style".
 
-(Incidentally, running SpamAssassin from Procimap is one of the
-reasons I wanted this -- for one thing, SpamAssassin rule updates etc.
-can be handled without a need for restarting procimap, and also,
-obvious optimizations are possible by running spamd/spamc instead of
-just the regular SpamAssassin.)
+
+Installing procimap
+-------------------
+
+Installing is a bit idiosyncratic.  There is a simple build script
+which builds procimap and Makefile.conf from their corresponding
+*.in files.  Any existing build will be overwritten with the default
+(or, as the case may be, your locally configured default) parameters.
+
+Run `./build.pl` with the default values you want, then run `make´.
+
+The top-level GNUMakefile also has a `deb' target for building a
+Debian (and hence, Ubuntu etc) binary package.
 
 
-era eriksson <era+debian@iki.fi>, Wed, 25 Jan 2006 09:35:04 +0200
+Getting started
+---------------
+
+Create a simple configuration file with your user name, password,
+and IMAP server name, and make sure it is not readable by others.
+
+    touch procimap.conf
+    chmod 600 procimap.conf
+    $VISUAL procimap.conf
+
+Its contents should look something like this:
+
+    server imap.example.com
+    user me
+    password xyzzy
+    ssl 1
+
+Then, create a simple `procimaprc' file, perhaps as simple as this:
+
+    NL="
+    "
+    LOG=`formail -XFrom: -XTo: -XCC: -XSubject: -XDate: -XMessage-ID:`"$NL"
+
+For experimentation, you might want to add some testing options, such
+as --no-act and --single-run, as well as perhaps --statedir=. (or you
+can equivalently add those to the configuration file instead; use 1 to
+indicate truth and 0 to indicate false for boolean options).
+
+    procimap --config procimap.conf --statedir=. --single-run --no-act
+
+DO NOT USE THE --password OPTION unless you are completely sure you are
+on a system where only yourself can get a process listing, which reveals
+the command-line arguments to processes to anyone who cares to look.
+
+If you have a large inbox, perhaps you want to manually set the
+message index to a high number in the file `procimap.mid' in the state
+directory, so that you do not scan thousands of messages every time
+you experiment.  (What is "high" for you?  I don't know.  Look at the
+IMAP message index of a recent message in your regular IMAP client, or
+even more manually telnet to the server and ask it.  Or brute-force
+it; start with an insanely high number and bisect.)
+
+There is a manual page with an EXAMPLE section.  If you wish to read
+the manual page without installing the package, it is embedded as POD
+in the procimap source file.  Look for the first `=head1' entry.
+
+The error message "SSL is unsupported as an attribute" is a symptom of
+a broken Perl IMAP back-end library; you want to upgrade to version
+3.21 or higher of Mail::IMAPClient (i.e. version 3.20-2 or higher of
+the Debian package libmail-imapclient-perl), or try without SSL (tsk tsk).
+
+-- era eriksson <era+debian@iki.fi>, Wed, 25 Jan 2006 09:35:04 +0200
