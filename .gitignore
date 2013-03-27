@@ -1,2 +1,13 @@
 Makefile.conf.in
 procimap.in
+*~
+debian/files
+debian/procimap/*
+debian/procimap.substvars
+debian/procimap.debhelper.log
+procimap.1
+procimaprc.ex
+procimap.conf
+procimaprc
+procimap.mid
+procimap.pid
