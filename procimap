@@ -131,9 +131,9 @@ in a simple L<ps(1)> listing.
 =for Getopt::Long
 i  inbox =s  Name of inbox folder on server
 
-B<procimap> will filter messages only in the inbox folder on the server.
+B<procimap> will filter messages only in one folder on the server.
 
-The default name of the inbox folder is F<INBOX>.
+The default name of this folder is F<INBOX>.
 
 
 =item B<-K>|B<--keepcrlf>
