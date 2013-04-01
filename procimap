@@ -919,7 +919,8 @@ while (1) {
     $IMAP->Clear;
     $IMAP->Timeout($delayTime);
     $connected = $IMAP -> connect();
-    &log("Could not connect: $@\n" . $IMAP->Report) unless (defined $connected); # if $Conf{verbose};
+    &log("Could not connect: $@\n" . $IMAP->Report)
+        unless (defined $connected); # if $Conf{verbose};
     $IMAP->Timeout(undef);
   }
   while (!$connected);
@@ -1023,7 +1024,10 @@ sub procmail {
     push @args, "PROCIMAP_MID=$param->{mid}" if defined $param->{mid};
     push @args, "PROCIMAP_VERBOSE=yes" if $Conf{verbose};
     push @args, "PROCIMAP_NO_ACT=yes" if $Conf{'no-act'};
-    push @args, ("PROCIMAPRC=$Conf{procmailrc}", $Conf{"wrapper"});
+    ######## FIXME: setting MAILDIR should not be necessary with -m
+    ######## TODO: submit a bug report for procmail
+    push @args, ("MAILDIR=.", "PROCIMAPRC=$Conf{procmailrc}",
+		$Conf{"wrapper"});
     exec ("procmail", "-m", @args) || die "$me: exec failed: $!";
 
     return undef;
