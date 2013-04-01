@@ -1,3 +1,14 @@
+procimap (0.08) unstable; urgency=low
+
+  * New release 0.08
+    - Do not write a PID file by default
+    - Run without a configuration file
+    - Minor cleanups related to migration to Git
+    - README updated with Getting Started section
+    - README and debian/copyright updated with Github URL
+
+ -- era eriksson <era+debian@iki.fi>  Mon, 01 Apr 2013 07:46:35 +0300
+
 procimap (0.07) unstable; urgency=low
 
   * New release 0.07

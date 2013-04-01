@@ -21,7 +21,7 @@ Getopt::Long::Configure('no_ignore_case');
 
 umask 077;
 
-our $VERSION = 0.07;			######## TODO: update for new version
+our $VERSION = 0.08;			######## TODO: update for new version
 our $me = $0;
 $me =~ s,.*/,,;
 
