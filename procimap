@@ -289,12 +289,12 @@ The default state directory is F<~/.procimap>
 =for Getopt::Long
 * pidfile =s    File to use for storing PID
 
-B<procimap> needs to keep track of its own process ID (PID)
-to be useful as a background program.
-
-By default, the process ID is saved in F<procimap.pid>.
+If you want B<procimap> to write its process-ID to a file when it starts,
+specify the file name with this option.
 
 A relative file name is interpreted relative to the I<statedir>.
+
+The PID file will be removed when B<procimap> finishes or is interrupted.
 
 
 =item B<--midfile> I<file>
@@ -652,7 +652,7 @@ if (-e $Conf{config})
 # Default parameters and file locations
 
 $Conf{statedir} ||= $Conf{statedir_default};
-$Conf{pidfile} ||= "procimap.pid";
+#$Conf{pidfile} ||= "procimap.pid";
 $Conf{midfile} ||= "procimap.mid";
 
 $Conf{procmailrc} ||= "procimaprc";
@@ -661,7 +661,7 @@ $Conf{wrapper} ||= $Conf{default_wrapper};
 # Resolve ~/ to $ENV{HOME}/
 
 $Conf{statedir} =~ s%^~%$ENV{HOME}%;
-$Conf{pidfile}  =~ s%^~/%$ENV{HOME}/%;
+$Conf{pidfile}  =~ s%^~/%$ENV{HOME}/% if defined $Conf{pidfile};
 $Conf{midfile}  =~ s%^~/%$ENV{HOME}/%;
 $Conf{procmailrc} =~ s%^~/%$ENV{HOME}/%;
 $Conf{wrapper}  =~ s%^~/%$ENV{HOME}/%;
@@ -673,7 +673,8 @@ $Conf{statedir} =~ s%([^/])$%$1/%;
 # procimap.[pm]id: relative paths are relative to $Conf{statedir}
 # except explicit ./filename
 
-$Conf{pidfile} =~ s%^([^/,]|\.[^/])%$Conf{statedir}$1%;
+$Conf{pidfile} =~ s%^([^/,]|\.[^/])%$Conf{statedir}$1%
+    if defined $Conf{pidfile};
 $Conf{midfile} =~ s%^([^/.]|\.[^/])%$Conf{statedir}$1%;
 
 $Conf{inbox} ||= "INBOX";
@@ -750,7 +751,8 @@ $SIG{TERM} = $SIG{INT} = \&catch_zap;
 
 # See if PID mentioned in PID file (if any) is still around
 
-if (! $Conf{'single-run'} && ! $Conf{'no-act'} && -e $Conf{pidfile}) {
+if (! $Conf{'single-run'} && ! $Conf{'no-act'}
+    && defined $Conf{pidfile} && -e $Conf{pidfile}) {
   open  PIDFILE,"$Conf{pidfile}"
       || die "$me: Could not open $Conf{pidfile}: $!\n";
   my $OldPID = <PIDFILE>;
@@ -794,7 +796,7 @@ my $LastMID = $PrevMID;
 
 # Write new PID file
 
-unless ($Conf{'single-run'} || $Conf{'no-act'}) {
+if (! $Conf{'single-run'} && ! $Conf{'no-act'} && defined $Conf{pidfile}) {
   open (PIDFILE,">$Conf{pidfile}")
       or die "$me: Could not open $Conf{pidfile} for writing: $!\n";
   print PIDFILE $$,"\n"
@@ -931,8 +933,11 @@ sub catch_zap { # Orderly shutdown, remove PID file
 	unless ($LastMID == 0);
   }
   else {
-    &log("Removing $Conf{pidfile}") if $Conf{verbose};
-    unlink $Conf{pidfile} || warn "$me: Could not remove $Conf{pidfile}: $!\n";
+    if (defined $Conf{pidfile}) {
+      &log("Removing $Conf{pidfile}") if $Conf{verbose};
+      unlink $Conf{pidfile} ||
+          warn "$me: Could not remove $Conf{pidfile}: $!\n";
+    }
 
     open (MIDFILE,">$Conf{midfile}")
 	or die "Could not open $Conf{midfile} for writing: $!\n";
