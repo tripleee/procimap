@@ -17,6 +17,8 @@ dual-licensed GPL/BSD "new style".
 Installing procimap
 -------------------
 
+Depends: Perl, Mail::ImapClient; procmail (duh).
+
 Installing is a bit idiosyncratic.  There is a simple build script
 which builds procimap and Makefile.conf from their corresponding
 *.in files.  Any existing build will be overwritten with the default
