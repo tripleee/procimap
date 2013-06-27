@@ -11,3 +11,8 @@ procimap.conf
 procimaprc
 procimap.mid
 procimap.pid
+procimap_*_all.deb
+procimap_*_amd64.build
+procimap_*_i386.build
+procimap_*_amd64.changes
+procimap_*_i386.changes
