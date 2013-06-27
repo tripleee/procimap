@@ -57,7 +57,7 @@ to a remote IMAP mailbox.
 
 Due to the nature of IMAP, some concepts of Procmail
 work quite differently in this setting.
-These issues are described in more detail below in L<|Procmail Recipes>.
+These issues are described in more detail below in L</Procmail Recipes>.
 
 
 =head1 Options
@@ -403,6 +403,7 @@ take precedence over the directives in the configuration file.
 The syntax is simple; one directive per line,
 keyword followed by value, separated by whitespace.
 Leading and trailing whitespace is trimmed.
+Boolean values are specified as numbers; 1 for I<true> and 0 for I<false>.
 
 
 =head1 Procmail Recipes
@@ -448,7 +449,8 @@ to ease debugging when this is set.
 When B<procimap> is being invoked with B<--no-act>,
 the variable F<PROCIMAP_NO_ACT> will be set to B<yes>.
 You should take care to avoid executing any
-delivering actions or other permanent side effects
+(non-final, i.e. cloned) delivering actions
+or other actions with permanent side effects
 when this variable is set.
 
 
@@ -457,7 +459,7 @@ when this variable is set.
 This variable is set to a single newline,
 as is customary in complex Procmail scripts.
 It is used for formatting log messages.
-It shbould probably not be changed.
+It should probably not be changed.
 
 =item B<PROCIMAP_LOGDATE>
 
@@ -1054,8 +1056,9 @@ Here is a brief example B<procimaprc> file to get you started.
   * ^From:(.*\<)?megan@example\.com\>
   * B ?? < 160
   {
-    # Send off a copy to pager (note "c" flag)
+    # Send off a copy to pager (note "c" flag and PROCIMAP_NO_ACT condition)
     :0c
+    * ! PROCIMAP_NO_ACT ?? ^^yes^^
     ! 5551212@pager.example.com
 
     # Mark for keeping
