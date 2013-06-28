@@ -10,6 +10,7 @@
 ######## TODO: better EXAMPLES section
 ######## TODO: --dump-config
 ######## TODO: more debugging hooks
+######## FIXME: default to --ssl; implement a --no-ssl option to disable
 
 use strict;
 use warnings;
@@ -249,12 +250,28 @@ The default maximum delay is 600 seconds (10 minutes).
 =for Getopt::Long
 -  single-run !  Only run once; don't reconnect
 
-Disconnect and quit after processing all new messages
+Disconnect and quit after processing the messages
 currently on the server.
 
 Normally, B<procimap> runs forever,
 reconnecting to the server at intervals specified
 by the I<delay> parameter above.
+
+Unless B<--all> was also specified, B<procimap>
+only downloads new (in IMAP terminology, "unseen")
+messages.
+
+
+=item B<-a>|B<--all>
+
+=for Getopt::Long
+a  all    !  Process all messages in inbox, not just unread
+
+With this option,
+B<procimap> will process all the messages in the selected folder,
+not just the new (unseen) ones.
+
+Implies B<--single-run>.
 
 
 =item B<-n>|B<--no-act>
@@ -704,7 +721,7 @@ autoflush LOG 1;
 if ($Conf{verbose}) {
   for my $param (qw(config procmailrc server user inbox
 		statedir logfile pidfile midfile delay maxdelay keepcrlf
-		ssl expunge ignoresizeerr single-run message wrapper)) {
+		ssl expunge ignoresizeerr single-run all message wrapper)) {
     my $logval = defined $Conf{"$param"} ? "'$Conf{$param}'" : '(undef)';
     &log("\$Conf{$param} is $logval");
   }
@@ -746,6 +763,10 @@ if ($Conf{message}) {
   exit 0;
 }
 
+# --all implies --single-run
+if ($Conf{'all'}) {
+  $Conf{'single-run'} = 1;
+}
 
 # Catch signals
 
@@ -833,8 +854,9 @@ $IMAP->Peek(1);
 my %Filtered = (); # Hash of already checked sequence #'s
 
 while (1) {
+  my @msgs = $Conf{'all'} ? $IMAP->messages() : $IMAP->unseen();
   ######## TODO: optimize away some of the sorting?
-  my @MIDs   = sort numerically $IMAP -> unseen();    # Unread message ID's
+  my @MIDs = sort numerically @msgs;
   my $MID;
   my $Expunge = 0;			# Whether to do an expunge when done
   foreach $MID (@MIDs) {
