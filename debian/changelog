@@ -1,3 +1,11 @@
+procimap (0.09) unstable; urgency=low
+
+  * New release 0.09
+    - Add option --all / -a to process all messages, not just unseen
+    - Minor updates to README and POD
+
+ -- era eriksson <era+debian@iki.fi>  Thu, 27 Jun 2013 04:46:54 +0000
+
 procimap (0.08) unstable; urgency=low
 
   * New release 0.08
