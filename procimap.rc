@@ -25,7 +25,8 @@ PROCIMAP_LOGDATE='eval date +"%a %b %_d %T %Y"'
 LOG=${PROCIMAP_VERBOSE:+${PROCIMAP_MID:+\
 `$PROCIMAP_LOGDATE;`" - $_ [$$] processing message $PROCIMAP_MID$NL"}}
 
-RESULT= EXITCODE=
+RESULT=
+EXITCODE=
 
 LOG=${PROCIMAP_VERBOSE:+\
 `$PROCIMAP_LOGDATE;`" - $_ [$$] invoking ${PROCIMAPRC-procimaprc}$NL"}
