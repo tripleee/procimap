@@ -471,6 +471,11 @@ or other actions with permanent side effects
 when this variable is set.
 
 
+=item B<PROCIMAP_INBOX>
+
+The name of the inbox folder on the server.
+
+
 =item B<NL>
 
 This variable is set to a single newline,
@@ -1051,6 +1056,7 @@ sub procmail {
     ######## FIXME: setting MAILDIR should not be necessary with -m
     ######## TODO: submit a bug report for procmail
     push @args, ("MAILDIR=.", "PROCIMAPRC=$Conf{procmailrc}",
+		"PROCIMAP_INBOX=$Conf{inbox}",
 		$Conf{"wrapper"});
     exec ("procmail", "-m", @args) || die "$me: exec failed: $!";
 
