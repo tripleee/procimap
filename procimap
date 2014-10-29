@@ -835,8 +835,7 @@ if (! $Conf{'single-run'} && ! $Conf{'no-act'} && defined $Conf{pidfile}) {
 }
 
 
-#use Mail::IMAPClient 2.0; # Version >= 2.0 required for $@
-use Mail::IMAPClient;	   # ... but 2.1.4 has non-numeric version )-:
+use Mail::IMAPClient 3.21; # Version >= 2.0 required for $@; 3.21 fixed SSL
 
 # Set up connection to IMAP
 
