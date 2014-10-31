@@ -923,6 +923,7 @@ while (1) {
     }
   }
   if ($Expunge) {
+    &log("Expunging") if $Conf{verbose};
     $IMAP->expunge();
   }
 
@@ -971,7 +972,8 @@ sub catch_zap { # Orderly shutdown, remove PID file
     open (MIDFILE,">$Conf{midfile}")
 	or die "Could not open $Conf{midfile} for writing: $!\n";
     print MIDFILE $LastMID,"\n";
-    close MIDFILE;
+    close MIDFILE or die "Could not finish writing $Conf{midfile}: $!\n";
+    &log("Wrote $LastMID to $Conf{midfile}");
   }
 
   &log("shutdown");
@@ -1057,6 +1059,7 @@ sub procmail {
     push @args, ("MAILDIR=.", "PROCIMAPRC=$Conf{procmailrc}",
 		"PROCIMAP_INBOX=$Conf{inbox}",
 		$Conf{"wrapper"});
+    &log("executing 'procmail','-m','" . join("','", @args) . "'");
     exec ("procmail", "-m", @args) || die "$me: exec failed: $!";
 
     return undef;
