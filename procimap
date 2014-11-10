@@ -733,7 +733,8 @@ if ($Conf{verbose}) {
 }
 
 unless (defined $Conf{expunge}) {
-  &log("expunge preference not explicitly set; defaulting to 0");
+  &log("expunge preference not explicitly set; defaulting to 0")
+      if $Conf{verbose};
   $Conf{expunge} = 0;
 }
 
@@ -1059,7 +1060,8 @@ sub procmail {
     push @args, ("MAILDIR=.", "PROCIMAPRC=$Conf{procmailrc}",
 		"PROCIMAP_INBOX=$Conf{inbox}",
 		$Conf{"wrapper"});
-    &log("executing 'procmail','-m','" . join("','", @args) . "'");
+    &log("executing 'procmail','-m','" . join("','", @args) . "'")
+	if $Conf{verbose};
     exec ("procmail", "-m", @args) || die "$me: exec failed: $!";
 
     return undef;
