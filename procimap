@@ -933,7 +933,7 @@ while (1) {
   # Sleep and reconnect to server.
   # Use scalable backoff if server is unavailable.
 
-  $IMAP = $IMAP -> disconnect();
+  $IMAP -> disconnect();
   my $connected;
   my $delayTime = $Conf{delay};
   do {
