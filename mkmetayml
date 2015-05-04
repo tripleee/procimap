@@ -32,10 +32,11 @@ meta-spec:
 name: $field{Package}
 version: $version
 abstract: $field{Description}
-author: $field{Maintainer}
+author:
+  - $field{Maintainer}
 resources:
-  - homepage: $field{"Vcs-Browser"}
-  - repository: $field{"Vcs-Git"}
+  homepage: $field{"Vcs-Browser"}
+  repository: $field{"Vcs-Git"}
 # Could not figure out how to specify a dual license ... just be less specific.
 license: open_source
 # XXX TODO: Maybe don't hardcode this

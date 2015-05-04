@@ -3,12 +3,13 @@ meta-spec:
    version: 1.4
    url: http://module-build.sourceforge.net/META-spec-v1.4html
 name: procimap
-version: 0.10-1-gd85cf78
+version: 0.10-5-g0384e14
 abstract: Run Procmail on an IMAP mailbox
-author: era eriksson <era+debian@iki.fi>
+author:
+  - era eriksson <era+debian@iki.fi>
 resources:
-  - homepage: https://github.com/tripleee/procimap
-  - repository: git://github.com/tripleee/procimap.git
+  homepage: https://github.com/tripleee/procimap
+  repository: git://github.com/tripleee/procimap.git
 # Could not figure out how to specify a dual license ... just be less specific.
 license: open_source
 # XXX TODO: Maybe don't hardcode this
