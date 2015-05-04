@@ -13,7 +13,7 @@ endif
 
 
 .PHONY: build
-build: procimap.in Makefile.conf.in
+build: procimap.in Makefile.conf.in META.yml
 	$(MAKE) -$(MAKEFLAGS) procimap procimap.1 procimaprc.ex
 
 
@@ -39,6 +39,9 @@ procimaprc.ex: procimap
 procimap.in Makefile.conf.in:  #procimap Makefile.conf
 	./build.pl --reverse
 
+META.yml: mkmetayml debian/control
+	./$^ >$@
+
 .PHONY: install
 install: procimap procimap.1 procimap.rc
 	test -r Makefile.conf
@@ -62,7 +65,7 @@ clean:
 	$(RM) procimap.1 procimaprc.ex
 .PHONY: realclean
 realclean: clean
-	-git checkout procimap Makefile.conf
+	-git checkout procimap Makefile.conf META.yml
 	./build.pl --reverse
 	$(RM) procimap Makefile.conf \
 		debian/files \

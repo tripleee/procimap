@@ -1,0 +1,46 @@
+#!/usr/bin/perl
+
+use strict;
+use warnings;
+
+#use Parse::Deb::Control;
+
+my %field;
+
+# Ouch. Simple quick and dirty parser for debian/control
+#my $parser = Parse::Deb::Control->new($ARGV[0])
+my $ctl = shift or die "Syntax: $0 debian/control\n";
+open (CTL, "<", $ctl) or die "$0: Could not open $ctl: $!\n";
+while (<CTL>) {
+    next unless m/^([A-Z][-_0-9A-Za-z]+):\s*(\S.*)\r?$/;
+    $field{$1} = $2;
+}
+close CTL;
+
+for my $check qw(Package Description Maintainer Vcs-Git Vcs-Browser) {
+    die "$0: $ctl lacks field $check -- aborting\n"
+        unless defined $field{$check};
+}
+
+my $version = `git describe`; chomp $version;
+
+print <<____HERE;
+--- #YAML:1.0
+meta-spec:
+   version: 1.4
+   url: http://module-build.sourceforge.net/META-spec-v1.4html
+name: $field{Package}
+version: $version
+abstract: $field{Description}
+author: $field{Maintainer}
+resources:
+  - homepage: $field{"Vcs-Browser"}
+  - repository: $field{"Vcs-Git"}
+# Could not figure out how to specify a dual license ... just be less specific.
+license: open_source
+# XXX TODO: Maybe don't hardcode this
+requires:
+  Mail::IMAPClient: 0
+recommends:
+  Mail::IMAPClient: 3.21
+____HERE
