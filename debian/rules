@@ -13,7 +13,7 @@
 build:
 	# in directory ..
 	-./build.pl --reverse
-	./build.pl --basedir=usr --wrapper=procimap/procimap.rc
+	./build.pl --groupaccess=1 --basedir=usr --wrapper=procimap/procimap.rc
 
 %:
 	dh  $@
