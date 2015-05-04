@@ -3,6 +3,15 @@ sudo: required
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -y devscripts   # provides: debuild
-install:
-  - cpanm --quiet --installdeps --notest . || find /home/travis -name build.log -exec sh -c 'awk "/^-> N\/A$/ { n=NR } /^! Configuring .* failed\./ { e=NR } END { if (e==NR && n=e-1) exit(0); exit 1 }" "$1" || { tail -n 10000 /dev/null "$1"; false; }' _ {} \;
-script: make deb
+# XXX TODO: if there is something which actually requires cpanm, revert this
+# (wrapped for legibility; maybe move to GNUMakefile if necessary)
+# install:
+#   - cpanm --quiet --installdeps --notest . ||
+#     find /home/travis -name build.log -exec \
+#     sh -c 'awk "/^-> N\/A$/ { n=NR } \
+#           /^! Configuring .* failed\./ { e=NR } \
+#           END { if (e==NR && n=e-1) exit(0); exit 1 }" "$1" ||
+#        { tail -n 10000 /dev/null "$1"; false; }' _ {} \;
+install: true
+script:
+  - make travis
