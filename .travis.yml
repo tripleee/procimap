@@ -1,6 +1,8 @@
 language: perl
 sudo: required
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install -y devscripts   # provides: debuild
 install:
-  - cpanm --installdeps --notest . || find /home/travis -name build.log -exec tail -n 10000 /dev/null {} \;
-  - sudo apt-get install devscripts
+  - cpanm --quiet --installdeps --notest . || find /home/travis -name build.log -exec sh -c 'awk "/^-> N\/A$/ { n=NR } /^! Configuring .* failed\./ { e=NR } END { if (e==NR && n=e-1) exit(0); exit 1 }" "$1" || { tail -n 10000 /dev/null "$1"; false; }' _ {} \;
 script: make deb
