@@ -3,6 +3,8 @@ Section: mail
 Priority: optional
 Maintainer: era eriksson <era+debian@iki.fi>
 Build-Depends: debhelper (>> 7.0.0)
+Vcs-Git: git://github.com/tripleee/procimap.git
+Vcs-Browser: https://github.com/tripleee/procimap
 Standards-Version: 3.5.2
 
 Package: procimap
