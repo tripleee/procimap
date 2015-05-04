@@ -1,3 +1,13 @@
+procimap (0.10) unstable; urgency=low
+
+  * New release 0.10
+    - Require Mail::IMAPClient >= 3.21
+    - Expose PROCIMAP_INBOX
+    - Some robustness fixes and logging tweaks
+  * .travis.yml: Add configuration file for https://travis-ci.org/
+
+ -- era eriksson <era+debian@iki.fi>  Mon, 04 May 2015 08:15:27 +0000
+
 procimap (0.09) unstable; urgency=low
 
   * New release 0.09
