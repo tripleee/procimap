@@ -1,3 +1,6 @@
 language: perl
-install: cpanm --quiet --installdeps --notest . || tail -n 10000 $HOME/.cpanm/work/*/build.log
+sudo: required
+install:
+  - cpanm --installdeps --notest . || find /home/travis -name build.log -exec tail -n 10000 /dev/null {} \;
+  - sudo apt-get install devscripts
 script: make deb
