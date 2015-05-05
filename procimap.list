@@ -1,0 +1,6 @@
+# Put this file in /etc/apt/sources.list.d/
+# (even if you are not on Debian Squeeze).
+# See https://github.org/tripleee/procimap for more information
+
+deb https://packagecloud.io/tripleee/procimap/debian/ squeeze main
+deb-src https://packagecloud.io/tripleee/procimap/debian/ squeeze main

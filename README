@@ -17,6 +17,38 @@ dual-licensed GPL/BSD "new style".
 Installing procimap
 -------------------
 
+Debian packages are provided via the terrific free services at
+https://travis-ci.org/ and https://packagecloud.io/
+
+The packages are nominally for Debian `squeeze` but should work for
+any current (or only mildly obsolescent) Debian or Ubuntu version.
+
+You need to accept the APT package key for Packagecloud.io:
+
+    curl https://packagecloud.io/gpg.key | sudo apt-key add -
+
+Then you can add the repository by adding `procimap.list` to
+`/etc/apt/sources.list.d/`.
+
+    # Make sure the HTTPS transport for APT is installed
+    sudo apt-get install -y apt-transport-https
+
+    curl https://cdn.rawgit.com/tripleee/procimap/master/procimap.list |
+    sudo tee /etc/apt/sources.list.d/procimap.list
+
+    sudo apt-get update
+
+With that in place, you should be able to do
+
+    sudo apt-get install procimap
+
+and receive updates as they are released.  (Maybe prefer `aptitude`,
+or a click-and-drool software manager.)
+
+
+Building procimap
+-----------------
+
 Depends: Perl, Mail::ImapClient; procmail (duh).
 
 Installing is a bit idiosyncratic.  There is a simple build script
@@ -24,7 +56,7 @@ which builds procimap and Makefile.conf from their corresponding
 *.in files.  Any existing build will be overwritten with the default
 (or, as the case may be, your locally configured default) parameters.
 
-Run `./build.pl` with the default values you want, then run `make´.
+Run `./build.pl` with the default values you want, then run `make`.
 
 The top-level GNUMakefile also has a `deb' target for building a
 Debian (and hence, Ubuntu etc) binary package.
