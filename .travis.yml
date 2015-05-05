@@ -14,7 +14,19 @@ before_install:
 #        { tail -n 10000 /dev/null "$1"; false; }' _ {} \;
 install: true
 script:
-  - make travis
+  - make deb
+deploy:
+  provider: packagecloud
+  username: tripleee
+  repository: procimap
+  token:
+    # sudo apt-get install ruby1.9.1-dev
+    # sudo gem install travis
+    # travis encrypt -r tripleee/procimap PACKAGECLOUD_TOKEN=abcdef...
+    secure: "RGrXObpI7D1pGIetoB6nB6mv7mxmOOWmjNv9u4sEMIh/ksyoqkLha1lMMEQdmxqojT61L8EmFm1iWjIoCSV68jNuU3d083Nq9Obbh9smwZ80S1KqszRaLIAPFuGQwLmn/ezHANh532AldydN6KKGBLQ2FhdMBEv+nTmqLS7gR/M="
+  dist: debian/squeeze
+  on:
+    all_branches: true
 notifications:
   email:
     - era+travis-procimap@iki.fi
