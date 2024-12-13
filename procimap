@@ -928,7 +928,12 @@ while (1) {
     $IMAP->expunge();
   }
 
-  exit 0 if $Conf{"single-run"};
+  if ($Conf{"single-run"})
+  {
+      &write_midfile;
+      exit 0;
+  }
+
 
   # Sleep and reconnect to server.
   # Use scalable backoff if server is unavailable.
@@ -958,6 +963,14 @@ while (1) {
   $IMAP -> select($Conf{inbox});
 }
 
+sub write_midfile {
+  open (MIDFILE,">$Conf{midfile}")
+    or die "Could not open $Conf{midfile} for writing: $!\n";
+  print MIDFILE $LastMID,"\n";
+  close MIDFILE or die "Could not finish writing $Conf{midfile}: $!\n";
+  &log("Wrote $LastMID to $Conf{midfile}");
+}
+
 sub catch_zap { # Orderly shutdown, remove PID file
   if ($Conf{'no-act'}) {
     &log("Processed through message $LastMID, but not updating $Conf{midfile}")
@@ -970,11 +983,7 @@ sub catch_zap { # Orderly shutdown, remove PID file
           warn "$me: Could not remove $Conf{pidfile}: $!\n";
     }
 
-    open (MIDFILE,">$Conf{midfile}")
-	or die "Could not open $Conf{midfile} for writing: $!\n";
-    print MIDFILE $LastMID,"\n";
-    close MIDFILE or die "Could not finish writing $Conf{midfile}: $!\n";
-    &log("Wrote $LastMID to $Conf{midfile}");
+    &write_midfile;
   }
 
   &log("shutdown");
