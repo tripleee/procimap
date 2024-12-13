@@ -1,3 +1,10 @@
+procimap (0.11) unstable; urgency=low
+
+  * New release 0.11
+    - Write midfile after --single-run too
+
+ -- era eriksson <era+debian@iki.fi>  Fri, 13 Dec 2024 08:29:08 +0000
+
 procimap (0.10) unstable; urgency=low
 
   * New release 0.10
